@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Company Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      --bg: #f7f3ec;
+      --ink: #172026;
+      --muted: #64717a;
+      --panel: #ffffff;
+      --line: #d8dedf;
+      --blue: #2563eb;
+      --green: #138a72;
+      --orange: #c05621;
+      --shadow: 0 18px 45px rgba(23, 32, 38, .14);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .shell {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      height: 100vh;
+      min-height: 620px;
+    }
+    .rail {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 22px;
+      background: #fcfaf6;
+      border-right: 1px solid var(--line);
+      overflow: auto;
+      z-index: 500;
+    }
+    .brand h1 {
+      margin: 0 0 6px;
+      font-size: 1.45rem;
+      letter-spacing: 0;
+    }
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: .95rem;
+    }
+    .toolbar {
+      display: grid;
+      gap: 10px;
+    }
+    .filters {
+      display: grid;
+      gap: 10px;
+    }
+    .filter-field {
+      display: grid;
+      gap: 5px;
+    }
+    .filter-field label {
+      color: var(--muted);
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+    input, select, button {
+      min-height: 42px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font: inherit;
+    }
+    input, select {
+      width: 100%;
+      padding: 0 12px;
+      background: var(--panel);
+      color: var(--ink);
+    }
+    select {
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: calc(100% - 18px) 18px, calc(100% - 12px) 18px;
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      padding-right: 34px;
+    }
+    input:hover, select:hover {
+      border-color: var(--blue);
+    }
+    button {
+      padding: 0 14px;
+      background: var(--ink);
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .status {
+      display: grid;
+      gap: 10px;
+    }
+    .metric {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px 12px;
+      align-items: center;
+      padding: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .metric strong { font-size: 1.45rem; }
+    .metric span {
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1.3;
+    }
+    .list {
+      display: grid;
+      gap: 8px;
+    }
+    .list h2 {
+      margin: 0;
+      font-size: .8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .list-meta {
+      margin: -2px 0 2px;
+      color: var(--muted);
+      font-size: .88rem;
+      line-height: 1.35;
+    }
+    .list button {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      background: var(--panel);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      text-align: left;
+      font-weight: 650;
+    }
+    .list-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .list-label span:last-child {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .list button:hover { border-color: var(--green); }
+    .count {
+      display: inline-grid;
+      place-items: center;
+      min-width: 28px;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #e4f3ef;
+      color: var(--green);
+      font-size: .85rem;
+    }
+    .map-wrap {
+      position: relative;
+      min-width: 0;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #dce8e7;
+    }
+    .details {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: min(380px, calc(100% - 36px));
+      max-height: calc(100% - 36px);
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      z-index: 700;
+      transform: translateX(calc(100% + 36px));
+      transition: transform .2s ease;
+    }
+    .details.open { transform: translateX(0); }
+    .details header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+    .details h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      letter-spacing: 0;
+    }
+    .detail-top {
+      display: grid;
+      grid-template-columns: 64px 1fr;
+      gap: 12px;
+      align-items: center;
+    }
+    .detail-top.no-logo {
+      display: block;
+    }
+    .logo {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .details a { color: var(--blue); overflow-wrap: anywhere; }
+    .close {
+      width: 32px;
+      min-height: 32px;
+      padding: 0;
+      border-radius: 50%;
+      background: #eef1f1;
+      color: var(--ink);
+    }
+    .field {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+    .field h3 {
+      margin: 0 0 6px;
+      font-size: .78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .field p { margin: 0; line-height: 1.45; }
+    .kv {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+    }
+    .kv div {
+      display: grid;
+      gap: 2px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #eef1f1;
+    }
+    .kv dt {
+      color: var(--muted);
+      font-size: .76rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .kv dd {
+      margin: 0;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+    .makers {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .makers li {
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfc;
+    }
+    .maker-title {
+      color: var(--muted);
+      font-size: .9rem;
+    }
+    .empty {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    .company-marker {
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--orange);
+      border: 3px solid white;
+      box-shadow: 0 8px 20px rgba(0,0,0,.25);
+      transition: background .15s ease, transform .15s ease;
+    }
+    .leaflet-marker-icon:hover .company-marker {
+      background: #2563eb;
+      transform: scale(1.12);
+    }
+    .company-marker.high-revenue {
+      width: 30px;
+      height: 30px;
+      background: #1f2937;
+      border: 3px solid white;
+      padding: 4px;
+      box-shadow: 0 0 0 4px rgba(19, 138, 114, .28), 0 10px 26px rgba(0,0,0,.3);
+      overflow: hidden;
+    }
+    .donut-img {
+      display: block;
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      max-width: 18px;
+      max-height: 18px;
+    }
+    .donut {
+      display: inline-grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #1f2937;
+      border: 2px solid white;
+      box-shadow: 0 0 0 1px rgba(19, 138, 114, .55);
+      padding: 3px;
+      overflow: hidden;
+    }
+    .donut .donut-img {
+      width: 14px;
+      height: 14px;
+      max-width: 14px;
+      max-height: 14px;
+    }
+    .tooltip {
+      min-width: 220px;
+      line-height: 1.35;
+    }
+    .tooltip strong { display: block; margin-bottom: 4px; }
+    .tooltip span {
+      display: block;
+      color: #374151;
+      font-size: .86rem;
+    }
+    @media (max-width: 860px) {
+      .shell {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(520px, 1fr);
+        height: auto;
+        min-height: 100vh;
+      }
+      .rail {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .map-wrap { min-height: 620px; }
+      .details {
+        top: auto;
+        bottom: 12px;
+        right: 12px;
+        width: calc(100% - 24px);
+        max-height: 60%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand">
+        <h1>Company Map</h1>
+        <p id="context">Select filters to narrow the map. Donut-marked companies are visit targets.</p>
+      </div>
+      <div class="toolbar">
+        <div class="filters">
+          <div class="filter-field">
+            <label for="state-filter">State</label>
+            <select id="state-filter">
+              <option value="">All states</option>
+            </select>
+          </div>
+          <div class="filter-field">
+            <label for="city-filter">City</label>
+            <select id="city-filter">
+              <option value="">All cities</option>
+            </select>
+          </div>
+        </div>
+        <div class="search-row">
+          <input id="search" type="search" placeholder="Search companies">
+          <button id="reset" type="button">Reset</button>
+        </div>
+      </div>
+      <section class="status">
+        <div class="metric">
+          <strong id="state-count">0</strong>
+          <span>states with data</span>
+        </div>
+        <div class="metric">
+          <strong id="company-count">0</strong>
+          <span>companies mapped</span>
+        </div>
+        <div class="legend"><span class="donut" aria-hidden="true"><img class="donut-img" src="https://www.svgrepo.com/show/505199/donut.svg" alt=""></span><span>$10M+ annual revenue: definitely visit</span></div>
+      </section>
+      <section class="list">
+        <h2 id="list-title">Companies</h2>
+        <p id="list-meta" class="list-meta">Loading companies...</p>
+        <div id="list"></div>
+      </section>
+    </aside>
+
+    <main class="map-wrap">
+      <div id="map" aria-label="Interactive company map"></div>
+      <aside id="details" class="details" aria-live="polite">
+        <header>
+          <h2 id="detail-name">Select a company</h2>
+          <button class="close" id="close-details" type="button" aria-label="Close">x</button>
+        </header>
+        <div id="detail-body" class="empty">Company details will appear here.</div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+  <script>
+    const fipsToCode = {
+      "01": "AL", "02": "AK", "04": "AZ", "05": "AR", "06": "CA", "08": "CO",
+      "09": "CT", "10": "DE", "11": "DC", "12": "FL", "13": "GA", "15": "HI",
+      "16": "ID", "17": "IL", "18": "IN", "19": "IA", "20": "KS", "21": "KY",
+      "22": "LA", "23": "ME", "24": "MD", "25": "MA", "26": "MI", "27": "MN",
+      "28": "MS", "29": "MO", "30": "MT", "31": "NE", "32": "NV", "33": "NH",
+      "34": "NJ", "35": "NM", "36": "NY", "37": "NC", "38": "ND", "39": "OH",
+      "40": "OK", "41": "OR", "42": "PA", "44": "RI", "45": "SC", "46": "SD",
+      "47": "TN", "48": "TX", "49": "UT", "50": "VT", "51": "VA", "53": "WA",
+      "54": "WV", "55": "WI", "56": "WY"
+    };
+    const stateCenters = {
+      CA: [36.78, -119.42], OR: [43.8, -120.55], WA: [47.4, -120.74],
+      NY: [42.9, -75.5], MA: [42.3, -71.8], NJ: [40.1, -74.7], CT: [41.6, -72.7],
+      PA: [41.0, -77.6], MD: [39.0, -76.7], VA: [37.7, -78.6], NC: [35.5, -79.4],
+      SC: [33.8, -80.9], GA: [32.7, -83.4], FL: [28.1, -81.6], ME: [45.2, -69.0],
+      NH: [43.7, -71.6], RI: [41.7, -71.5], DE: [39.0, -75.5], DC: [38.9, -77.0]
+    };
+
+    const map = L.map("map", { zoomControl: true }).setView([39.8, -98.6], 4);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    const stateLayer = L.layerGroup().addTo(map);
+    const companyLayer = L.layerGroup().addTo(map);
+    const list = document.querySelector("#list");
+    const listTitle = document.querySelector("#list-title");
+    const listMeta = document.querySelector("#list-meta");
+    const context = document.querySelector("#context");
+    const search = document.querySelector("#search");
+    const stateFilter = document.querySelector("#state-filter");
+    const cityFilter = document.querySelector("#city-filter");
+    const details = document.querySelector("#details");
+    const detailName = document.querySelector("#detail-name");
+    const detailBody = document.querySelector("#detail-body");
+
+    let data = { states: [], cities: [], companies: [] };
+    let geoJsonLayer = null;
+    const donutSvg = "https://www.svgrepo.com/show/505199/donut.svg";
+    const stateNames = {
+      AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+      CO: "Colorado", CT: "Connecticut", DE: "Delaware", DC: "District of Columbia",
+      FL: "Florida", GA: "Georgia", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+      IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana",
+      ME: "Maine", MD: "Maryland", MA: "Massachusetts", MI: "Michigan",
+      MN: "Minnesota", MS: "Mississippi", MO: "Missouri", MT: "Montana",
+      NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+      NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota",
+      OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania",
+      RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota",
+      TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont", VA: "Virginia",
+      WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming"
+    };
+
+    function companyIcon(company) {
+      const highRevenue = company.is_high_revenue ? " high-revenue" : "";
+      const size = company.is_high_revenue ? 30 : 26;
+      return L.divIcon({
+        className: "",
+        html: `<span class="company-marker${highRevenue}">${company.is_high_revenue ? donutImgHtml() : ""}</span>`,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2]
+      });
+    }
+
+    function donutImgHtml() {
+      return `<img class="donut-img" src="${donutSvg}" alt="">`;
+    }
+
+    function escapeHtml(value) {
+      return String(value || "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[char]));
+    }
+
+    function formatMoney(value) {
+      if (!value) return "";
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0
+      }).format(value);
+    }
+
+    function stateCount(code) {
+      const found = data.states.find(state => state.state_code === code);
+      return found ? found.company_count : 0;
+    }
+
+    function filteredCompanies() {
+      const term = search.value.trim().toLowerCase();
+      const selectedState = stateFilter.value;
+      const citySelection = selectedCityFilter();
+      return data.companies.filter(company => {
+        const scopeOk = (!selectedState || company.state_code === selectedState) &&
+          (!citySelection.city || company.city === citySelection.city) &&
+          (!citySelection.stateCode || company.state_code === citySelection.stateCode);
+        if (!term) return scopeOk;
+        const haystack = [company.name, company.domain, company.city, company.state_code, stateName(company.state_code), company.address, company.industry, company.product_category]
+          .join(" ")
+          .toLowerCase();
+        return scopeOk && haystack.includes(term);
+      });
+    }
+
+    function stateName(code) {
+      return stateNames[code] || code || "";
+    }
+
+    function selectedCityFilter() {
+      const raw = cityFilter.value;
+      if (!raw) return { stateCode: "", city: "" };
+      if (!raw.includes("||")) return { stateCode: "", city: raw };
+      const [stateCode, city] = raw.split("||");
+      return { stateCode, city };
+    }
+
+    function renderStateShapes() {
+      stateLayer.clearLayers();
+      if (geoJsonLayer) {
+        geoJsonLayer.remove();
+      }
+      fetch("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
+        .then(response => response.json())
+        .then(us => {
+          const features = topojson.feature(us, us.objects.states);
+          geoJsonLayer = L.geoJSON(features, {
+            style: stateStyle,
+            onEachFeature: (feature, layer) => {
+              const code = fipsToCode[String(feature.id).padStart(2, "0")];
+              if (!code) return;
+              const count = stateCount(code);
+              layer.bindTooltip(`${stateName(code)}: ${count} companies`);
+              layer.on("mouseover", () => {
+                layer.setStyle({
+                  color: count ? "#2563eb" : "#9ca3af",
+                  weight: count ? 2.4 : 1,
+                  fillColor: count ? "#bfdbfe" : "#f3f4f6",
+                  fillOpacity: count ? .62 : .22
+                });
+                layer.bringToFront();
+              });
+              layer.on("mouseout", () => {
+                if (geoJsonLayer) {
+                  geoJsonLayer.resetStyle(layer);
+                }
+              });
+              layer.on("click", () => {
+                if (count) {
+                  stateFilter.value = code;
+                  populateCityFilter();
+                  cityFilter.value = "";
+                  applyFilters({ fit: true, bounds: layer.getBounds() });
+                }
+              });
+            }
+          }).addTo(stateLayer);
+        })
+        .catch(renderStateFallback);
+    }
+
+    function stateStyle(feature) {
+      const code = fipsToCode[String(feature.id).padStart(2, "0")];
+      const count = stateCount(code);
+      return {
+        color: count ? "#138a72" : "#9ca3af",
+        weight: count ? 1.4 : .7,
+        fillColor: count ? "#7ac9ba" : "#eef1f1",
+        fillOpacity: count ? .45 : .16
+      };
+    }
+
+    function renderStateFallback() {
+      data.states.forEach(state => {
+        const center = stateCenters[state.state_code];
+        if (!center) return;
+        L.circleMarker(center, {
+          radius: 16,
+          color: "#138a72",
+          fillColor: "#7ac9ba",
+          fillOpacity: .6,
+          weight: 2
+        })
+          .bindTooltip(`${stateName(state.state_code)}: ${state.company_count} companies`)
+          .on("click", () => {
+            stateFilter.value = state.state_code;
+            populateCityFilter();
+            cityFilter.value = "";
+            applyFilters({ fit: true });
+          })
+          .addTo(stateLayer);
+      });
+    }
+
+    function tooltipHtml(company) {
+      const makers = company.decision_makers.map(maker => maker.name).filter(Boolean).join(", ");
+      return `
+        <div class="tooltip">
+          <strong>${escapeHtml(company.name)}</strong>
+          <span>${escapeHtml(company.city)}, ${escapeHtml(company.state_code)}</span>
+          <span>${escapeHtml(company.domain || "No domain")}</span>
+          ${company.is_high_revenue ? `<span>${escapeHtml(formatMoney(company.annual_revenue))} annual revenue</span>` : ""}
+          <span>Funding: ${escapeHtml(company.funding_data || "Not provided")}</span>
+          <span>Revenue: ${escapeHtml(company.revenue_data || "Not provided")}</span>
+          <span>Decision makers: ${escapeHtml(makers || "Not provided")}</span>
+        </div>
+      `;
+    }
+
+    function renderCompanies() {
+      companyLayer.clearLayers();
+      filteredCompanies().forEach(company => {
+        L.marker([company.latitude, company.longitude], { icon: companyIcon(company) })
+          .bindTooltip(tooltipHtml(company), { direction: "top", opacity: .98 })
+          .on("click", () => focusCompany(company))
+          .addTo(companyLayer);
+      });
+    }
+
+    function renderList() {
+      const companies = filteredCompanies();
+      list.innerHTML = "";
+      listTitle.textContent = "Companies";
+      const visitTargets = companies.filter(company => company.is_high_revenue).length;
+      listMeta.textContent = `${companies.length} companies shown${visitTargets ? `, ${visitTargets} definitely visit` : ""}.`;
+      if (!companies.length) {
+        list.innerHTML = `<p class="empty">No companies match these filters.</p>`;
+        return;
+      }
+      companies.forEach(company => addListButton(
+        company.name,
+        [company.city, stateName(company.state_code)].filter(Boolean).join(", "),
+        () => {
+          focusCompany(company);
+        },
+        company.is_high_revenue
+      ));
+    }
+
+    function addListButton(label, count, action, highRevenue = false) {
+      const button = document.createElement("button");
+      button.type = "button";
+      const icon = highRevenue ? `<span class="donut" aria-label="Definitely visit">${donutImgHtml()}</span>` : "";
+      button.innerHTML = `<span class="list-label">${icon}<span>${escapeHtml(label)}</span></span><span class="count">${escapeHtml(count)}</span>`;
+      button.addEventListener("click", action);
+      list.appendChild(button);
+    }
+
+    function showDetails(company) {
+      detailName.textContent = "";
+      const logoHtml = company.logo_url ? `<img class="logo" src="${escapeHtml(company.logo_url)}" alt="">` : "";
+      detailName.innerHTML = `
+        <span class="detail-top${company.logo_url ? "" : " no-logo"}">
+          ${logoHtml}
+          <span>${escapeHtml(company.name)}</span>
+        </span>
+      `;
+      const makers = company.decision_makers.length
+        ? `<ul class="makers">${company.decision_makers.map(maker => `
+            <li>
+              <strong>${escapeHtml(maker.name)}</strong>
+              ${maker.title ? `<div class="maker-title">${escapeHtml(maker.title)}</div>` : ""}
+              ${maker.email ? `<div><a href="mailto:${escapeHtml(maker.email)}">${escapeHtml(maker.email)}</a></div>` : ""}
+              ${maker.linkedin_url ? `<div><a href="${escapeHtml(maker.linkedin_url)}" target="_blank" rel="noreferrer">LinkedIn</a></div>` : ""}
+            </li>
+          `).join("")}</ul>`
+        : `<p class="empty">No decision makers added yet.</p>`;
+      const rawFields = Object.entries(company.raw_data || {})
+        .filter(([, value]) => value !== null && String(value).trim() !== "")
+        .map(([key, value]) => `
+          <div>
+            <dt>${escapeHtml(key)}</dt>
+            <dd>${linkifyValue(key, value)}</dd>
+          </div>
+        `)
+        .join("");
+      detailBody.innerHTML = `
+        ${company.url ? `<div class="field"><h3>URL</h3><p><a href="${escapeHtml(company.url)}" target="_blank" rel="noreferrer">${escapeHtml(company.url)}</a></p></div>` : ""}
+        ${company.domain ? `<div class="field"><h3>Domain</h3><p>${escapeHtml(company.domain)}</p></div>` : ""}
+        ${company.linkedin_url ? `<div class="field"><h3>LinkedIn</h3><p><a href="${escapeHtml(company.linkedin_url)}" target="_blank" rel="noreferrer">Company profile</a></p></div>` : ""}
+        <div class="field"><h3>Location</h3><p>${escapeHtml(company.address || `${company.city}, ${company.state_code}`)}</p></div>
+        ${company.industry || company.employee_count ? `<div class="field"><h3>Company</h3><p>${escapeHtml([company.industry, company.employee_count ? `${company.employee_count} employees` : ""].filter(Boolean).join(" · "))}</p></div>` : ""}
+        ${company.product_category || company.sub_type || company.segment || company.priority ? `<div class="field"><h3>Segment</h3><p>${escapeHtml([company.product_category, company.sub_type, company.segment, company.priority].filter(Boolean).join(" · "))}</p></div>` : ""}
+        <div class="field"><h3>Funding</h3><p>${escapeHtml(company.funding_data || "Not provided")}</p></div>
+        <div class="field"><h3>Revenue</h3><p>${escapeHtml(formatMoney(company.annual_revenue) || company.revenue_data || "Not provided")}</p></div>
+        <div class="field"><h3>Decision Makers</h3>${makers}</div>
+        ${company.notes ? `<div class="field"><h3>Notes</h3><p>${escapeHtml(company.notes)}</p></div>` : ""}
+        ${rawFields ? `<div class="field"><h3>All CSV Fields</h3><dl class="kv">${rawFields}</dl></div>` : ""}
+      `;
+      details.classList.add("open");
+    }
+
+    function focusCompany(company) {
+      showDetails(company);
+      map.setView([company.latitude, company.longitude], 17, { animate: true });
+    }
+
+    function linkifyValue(key, value) {
+      const text = String(value || "");
+      const escaped = escapeHtml(text);
+      if (/url|website|linkedin|facebook|twitter/i.test(key) && /^https?:\/\//i.test(text)) {
+        return `<a href="${escaped}" target="_blank" rel="noreferrer">${escaped}</a>`;
+      }
+      if (/email|owner/i.test(key) && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(text)) {
+        return `<a href="mailto:${escaped}">${escaped}</a>`;
+      }
+      return escaped;
+    }
+
+    function populateStateFilter() {
+      const current = stateFilter.value;
+      stateFilter.innerHTML = `<option value="">All states</option>`;
+      data.states
+        .filter(state => state.state_code)
+        .slice()
+        .sort((a, b) => stateName(a.state_code).localeCompare(stateName(b.state_code)))
+        .forEach(state => {
+          const option = document.createElement("option");
+          option.value = state.state_code;
+          option.textContent = `${stateName(state.state_code)} (${state.company_count})`;
+          stateFilter.appendChild(option);
+        });
+      stateFilter.value = current;
+    }
+
+    function populateCityFilter() {
+      const selectedState = stateFilter.value;
+      const current = cityFilter.value;
+      cityFilter.innerHTML = `<option value="">All cities</option>`;
+      data.cities
+        .filter(city => !selectedState || city.state_code === selectedState)
+        .slice()
+        .sort((a, b) => a.city.localeCompare(b.city) || stateName(a.state_code).localeCompare(stateName(b.state_code)))
+        .forEach(city => {
+          const option = document.createElement("option");
+          option.value = selectedState ? city.city : `${city.state_code}||${city.city}`;
+          option.textContent = selectedState
+            ? `${city.city} (${city.company_count})`
+            : `${city.city}, ${stateName(city.state_code)} (${city.company_count})`;
+          cityFilter.appendChild(option);
+        });
+
+      const stillValid = Array.from(cityFilter.options).some(option => option.value === current);
+      cityFilter.value = stillValid ? current : "";
+    }
+
+    function fitCompanies(companies, fallbackBounds = null) {
+      if (!companies.length) {
+        if (fallbackBounds) {
+          map.fitBounds(fallbackBounds, { padding: [36, 36] });
+        } else {
+          map.setView([39.8, -98.6], 4);
+        }
+        return;
+      }
+      const bounds = L.latLngBounds(companies.map(company => [company.latitude, company.longitude]));
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, {
+          paddingTopLeft: [28, 28],
+          paddingBottomRight: [420, 28],
+          maxZoom: companies.length === 1 ? 12 : 9
+        });
+      }
+    }
+
+    function updateContext(companies) {
+      const citySelection = selectedCityFilter();
+      const stateLabel = stateFilter.value
+        ? stateName(stateFilter.value)
+        : citySelection.stateCode
+          ? stateName(citySelection.stateCode)
+          : "All states";
+      const cityLabel = citySelection.city || "All cities";
+      const visitTargets = companies.filter(company => company.is_high_revenue).length;
+      context.textContent = `${stateLabel} · ${cityLabel}. ${companies.length} companies shown${visitTargets ? `, ${visitTargets} definitely visit` : ""}.`;
+    }
+
+    function applyFilters({ fit = true, bounds = null } = {}) {
+      details.classList.remove("open");
+      renderCompanies();
+      renderList();
+      const companies = filteredCompanies();
+      updateContext(companies);
+      if (fit) {
+        fitCompanies(companies, bounds);
+      }
+    }
+
+    function refresh() {
+      applyFilters({ fit: false });
+    }
+
+    document.querySelector("#reset").addEventListener("click", () => {
+      stateFilter.value = "";
+      populateCityFilter();
+      cityFilter.value = "";
+      search.value = "";
+      applyFilters({ fit: true });
+    });
+    document.querySelector("#close-details").addEventListener("click", () => details.classList.remove("open"));
+    stateFilter.addEventListener("change", () => {
+      populateCityFilter();
+      applyFilters({ fit: true });
+    });
+    cityFilter.addEventListener("change", () => applyFilters({ fit: true }));
+    search.addEventListener("input", refresh);
+
+    fetch("{% url 'companymap:company_map_data' %}")
+      .then(response => response.json())
+      .then(payload => {
+        data = payload;
+        document.querySelector("#state-count").textContent = data.states.length;
+        document.querySelector("#company-count").textContent = data.companies.length;
+        populateStateFilter();
+        populateCityFilter();
+        renderStateShapes();
+        applyFilters({ fit: true });
+      });
+  </script>
+</body>
+</html>

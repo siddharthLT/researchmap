@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+db.sqlite3
+sfaccts_research.csv
+staticfiles/
+.env
+.env.local
+.DS_Store

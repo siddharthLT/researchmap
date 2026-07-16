@@ -1,0 +1,3 @@
+name,url,address,city,state_code,latitude,longitude,funding_data,revenue_data,decision_makers,notes
+Example Biotech,https://example.com,1 Market St,San Francisco,CA,,,Series B - $45M,$12M ARR,Jane Doe|CEO|jane@example.com|https://linkedin.com/in/janedoe;Sam Lee|CFO||,Seed row for testing
+Example Therapeutics,https://example.org,500 Kendall St,Cambridge,MA,,,Series A - $28M,Not disclosed,Avery Smith|Founder||,
