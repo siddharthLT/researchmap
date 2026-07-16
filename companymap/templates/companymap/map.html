@@ -322,21 +322,21 @@
       transform: scale(1.12);
     }
     .company-marker.high-revenue {
-      width: 30px;
-      height: 30px;
-      background: #1f2937;
-      border: 3px solid white;
-      padding: 4px;
-      box-shadow: 0 0 0 4px rgba(19, 138, 114, .28), 0 10px 26px rgba(0,0,0,.3);
+      width: 32px;
+      height: 32px;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      box-shadow: 0 8px 20px rgba(0,0,0,.22);
       overflow: hidden;
     }
     .donut-img {
       display: block;
-      width: 18px;
-      height: 18px;
+      width: 32px;
+      height: 32px;
       object-fit: contain;
-      max-width: 18px;
-      max-height: 18px;
+      max-width: 32px;
+      max-height: 32px;
     }
     .donut {
       display: inline-grid;
@@ -344,18 +344,17 @@
       width: 24px;
       height: 24px;
       flex: 0 0 auto;
-      border-radius: 50%;
-      background: #1f2937;
-      border: 2px solid white;
-      box-shadow: 0 0 0 1px rgba(19, 138, 114, .55);
-      padding: 3px;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 0;
       overflow: hidden;
     }
     .donut .donut-img {
-      width: 14px;
-      height: 14px;
-      max-width: 14px;
-      max-height: 14px;
+      width: 24px;
+      height: 24px;
+      max-width: 24px;
+      max-height: 24px;
     }
     .tooltip {
       min-width: 220px;
@@ -507,7 +506,7 @@
 
     function companyIcon(company) {
       const highRevenue = company.is_high_revenue ? " high-revenue" : "";
-      const size = company.is_high_revenue ? 30 : 26;
+      const size = company.is_high_revenue ? 32 : 26;
       return L.divIcon({
         className: "",
         html: `<span class="company-marker${highRevenue}">${company.is_high_revenue ? donutImgHtml() : ""}</span>`,
