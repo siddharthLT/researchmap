@@ -25,7 +25,7 @@ class Company(models.Model):
     industry = models.CharField(max_length=255, blank=True)
     account_stage = models.CharField(max_length=120, blank=True)
     account_owner = models.EmailField(blank=True)
-    product_category = models.CharField(max_length=255, blank=True)
+    product_category = models.TextField(blank=True)
     sub_type = models.CharField(max_length=255, blank=True)
     segment = models.CharField(max_length=255, blank=True)
     priority = models.CharField(max_length=64, blank=True)

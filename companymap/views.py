@@ -1,14 +1,42 @@
+import json
+import logging
 from collections import defaultdict
 
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.views.decorators.http import require_POST
 
+from .ai_chat import run_chat
 from .models import Company
+
+logger = logging.getLogger(__name__)
 
 
 def map_view(request):
     return render(request, "companymap/map.html")
+
+
+@require_POST
+def chat_api(request):
+    try:
+        payload = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON body."}, status=400)
+
+    message = (payload.get("message") or "").strip()
+    if not message:
+        return JsonResponse({"error": "Message is required."}, status=400)
+
+    history = payload.get("history") or []
+
+    try:
+        result = run_chat(message, history)
+    except Exception:
+        logger.exception("AI chat request failed")
+        return JsonResponse({"error": "The assistant is unavailable right now."}, status=502)
+
+    return JsonResponse(result)
 
 
 def company_map_data(request):

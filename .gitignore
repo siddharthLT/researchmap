@@ -4,6 +4,9 @@ __pycache__/
 venv/
 db.sqlite3
 sfaccts_research.csv
+eastcoastcosdata.csv
+apollo-accounts-export*.csv
+eastcoast_import_clean.csv
 staticfiles/
 .env
 .env.local

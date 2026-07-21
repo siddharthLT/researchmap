@@ -2,3 +2,5 @@ Django==5.2.15
 dj-database-url
 psycopg[binary]
 python-dotenv
+openai
+requests

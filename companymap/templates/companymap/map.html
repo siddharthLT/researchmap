@@ -386,6 +386,141 @@
         max-height: 60%;
       }
     }
+    .chat-toggle {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 18px 0 8px;
+      height: 52px;
+      border-radius: 999px;
+      background: var(--ink);
+      color: #fff;
+      border: 0;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      font-weight: 700;
+      z-index: 1000;
+      transition: transform .15s ease;
+    }
+    .chat-toggle:hover { transform: translateY(-2px); }
+    .chat-toggle-badge {
+      display: inline-grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-size: .74rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .chat-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100vh;
+      width: min(400px, 100%);
+      background: var(--panel);
+      border-left: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform .2s ease;
+    }
+    .chat-panel.open { transform: translateX(0); }
+    .chat-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .chat-header h2 { margin: 0 0 4px; font-size: 1.1rem; }
+    .chat-header p { margin: 0; color: var(--muted); font-size: .85rem; line-height: 1.4; }
+    .chat-messages {
+      flex: 1;
+      overflow: auto;
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+    .chat-msg {
+      max-width: 92%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      line-height: 1.45;
+      font-size: .92rem;
+    }
+    .chat-msg p { margin: 0 0 6px; }
+    .chat-msg p:last-child { margin-bottom: 0; }
+    .chat-msg-user {
+      justify-self: end;
+      background: var(--ink);
+      color: #fff;
+    }
+    .chat-msg-assistant {
+      justify-self: start;
+      background: #f1f4f4;
+      color: var(--ink);
+    }
+    .chat-msg-error {
+      justify-self: start;
+      background: #fdeceb;
+      color: #9b2c2c;
+    }
+    .chat-results {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .chat-result-btn {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      width: 100%;
+      min-height: 38px;
+      padding: 8px 10px;
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: left;
+      font-size: .85rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .chat-result-btn:hover { border-color: var(--blue); }
+    .chat-typing { color: var(--muted); font-size: .85rem; font-style: italic; }
+    .chat-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 14px 18px;
+      border-top: 1px solid var(--line);
+    }
+    .chat-form textarea {
+      resize: none;
+      min-height: 42px;
+      max-height: 120px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      font: inherit;
+    }
+    .chat-form button { min-height: 42px; }
+    .details.chat-open { right: 418px; }
+    @media (max-width: 860px) {
+      .chat-panel { width: 100%; }
+      .details.chat-open { right: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -444,6 +579,31 @@
       </aside>
     </main>
   </div>
+
+  <button id="chat-toggle" class="chat-toggle" type="button" aria-expanded="false" aria-controls="chat-panel">
+    <span class="chat-toggle-badge" aria-hidden="true">AI</span>
+    <span>Ask about the map</span>
+  </button>
+
+  <aside id="chat-panel" class="chat-panel" aria-live="polite" aria-hidden="true">
+    <header class="chat-header">
+      <div>
+        <h2>Map Assistant</h2>
+        <p>Ask about companies, funding, revenue, or distance between them.</p>
+      </div>
+      <button id="chat-close" class="close" type="button" aria-label="Close chat">x</button>
+    </header>
+    <div id="chat-messages" class="chat-messages">
+      <div class="chat-msg chat-msg-assistant">
+        <p>Try: "Companies within 10km of Acme Corp with funding and $1M+ revenue."</p>
+      </div>
+    </div>
+    <form id="chat-form" class="chat-form">
+      {% csrf_token %}
+      <textarea id="chat-input" rows="1" placeholder="Ask a question about the map..." required></textarea>
+      <button type="submit" id="chat-send">Send</button>
+    </form>
+  </aside>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/topojson-client@3"></script>
@@ -868,6 +1028,111 @@
         renderStateShapes();
         applyFilters({ fit: true });
       });
+
+    const chatToggle = document.querySelector("#chat-toggle");
+    const chatPanel = document.querySelector("#chat-panel");
+    const chatClose = document.querySelector("#chat-close");
+    const chatMessages = document.querySelector("#chat-messages");
+    const chatForm = document.querySelector("#chat-form");
+    const chatInput = document.querySelector("#chat-input");
+    const chatSend = document.querySelector("#chat-send");
+    const csrfToken = chatForm.querySelector("[name=csrfmiddlewaretoken]").value;
+
+    let chatHistory = [];
+    let chatBusy = false;
+
+    function openChat() {
+      chatPanel.classList.add("open");
+      chatPanel.setAttribute("aria-hidden", "false");
+      chatToggle.setAttribute("aria-expanded", "true");
+      details.classList.add("chat-open");
+      chatInput.focus();
+    }
+
+    function closeChat() {
+      chatPanel.classList.remove("open");
+      chatPanel.setAttribute("aria-hidden", "true");
+      chatToggle.setAttribute("aria-expanded", "false");
+      details.classList.remove("chat-open");
+    }
+
+    chatToggle.addEventListener("click", () => {
+      if (chatPanel.classList.contains("open")) {
+        closeChat();
+      } else {
+        openChat();
+      }
+    });
+    chatClose.addEventListener("click", closeChat);
+
+    function appendChatMessage(role, html) {
+      const wrap = document.createElement("div");
+      wrap.className = `chat-msg chat-msg-${role}`;
+      wrap.innerHTML = html;
+      chatMessages.appendChild(wrap);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return wrap;
+    }
+
+    function chatResultsHtml(companyIds) {
+      const matches = companyIds
+        .map(id => data.companies.find(company => company.id === id))
+        .filter(Boolean);
+      if (!matches.length) return "";
+      const buttons = matches.map(company => `
+        <button type="button" class="chat-result-btn" data-company-id="${company.id}">
+          <span class="list-label"><span>${escapeHtml(company.name)}</span></span>
+          <span class="count">${escapeHtml([company.city, stateName(company.state_code)].filter(Boolean).join(", "))}</span>
+        </button>
+      `).join("");
+      return `<div class="chat-results">${buttons}</div>`;
+    }
+
+    chatMessages.addEventListener("click", event => {
+      const button = event.target.closest(".chat-result-btn");
+      if (!button) return;
+      const id = Number(button.dataset.companyId);
+      const company = data.companies.find(c => c.id === id);
+      if (company) focusCompany(company);
+    });
+
+    chatForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      const question = chatInput.value.trim();
+      if (!question || chatBusy) return;
+      appendChatMessage("user", `<p>${escapeHtml(question)}</p>`);
+      chatInput.value = "";
+      chatBusy = true;
+      chatSend.disabled = true;
+      const typing = appendChatMessage("assistant", `<p class="chat-typing">Thinking…</p>`);
+
+      try {
+        const response = await fetch("{% url 'companymap:chat_api' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+          },
+          body: JSON.stringify({ message: question, history: chatHistory.slice(-10) })
+        });
+        const payload = await response.json();
+        typing.remove();
+        if (!response.ok || payload.error) {
+          appendChatMessage("error", `<p>${escapeHtml(payload.error || "Something went wrong.")}</p>`);
+          return;
+        }
+        chatHistory.push({ role: "user", content: question });
+        const resultsHtml = chatResultsHtml(payload.company_ids || []);
+        appendChatMessage("assistant", `<p>${escapeHtml(payload.reply).replace(/\n/g, "<br>")}</p>${resultsHtml}`);
+        chatHistory.push({ role: "assistant", content: payload.reply });
+      } catch (err) {
+        typing.remove();
+        appendChatMessage("error", "<p>Couldn't reach the assistant. Please try again.</p>");
+      } finally {
+        chatBusy = false;
+        chatSend.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>
