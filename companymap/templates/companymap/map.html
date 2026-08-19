@@ -498,6 +498,24 @@
       cursor: pointer;
     }
     .chat-result-btn:hover { border-color: var(--blue); }
+    .chat-export {
+      margin-top: 8px;
+    }
+    .chat-export-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 8px 12px;
+      background: #fff;
+      color: var(--ink);
+      border: 1px solid var(--green);
+      border-radius: 8px;
+      font-size: .85rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .chat-export-btn:hover { background: #e4f3ef; }
     .chat-typing { color: var(--muted); font-size: .85rem; font-style: italic; }
     .chat-form {
       display: grid;
@@ -1088,12 +1106,48 @@
       return `<div class="chat-results">${buttons}</div>`;
     }
 
+    let exportCounter = 0;
+    const exportStore = {};
+
+    function chatExportHtml(exportData) {
+      if (!exportData || !exportData.csv) return "";
+      const id = exportCounter++;
+      exportStore[id] = exportData;
+      return `
+        <div class="chat-export">
+          <button type="button" class="chat-export-btn" data-export-id="${id}">
+            <span aria-hidden="true">&#8681;</span>
+            <span>Download CSV (${exportData.count} companies)</span>
+          </button>
+        </div>
+      `;
+    }
+
+    function downloadCsv(filename, csvText) {
+      const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
     chatMessages.addEventListener("click", event => {
-      const button = event.target.closest(".chat-result-btn");
-      if (!button) return;
-      const id = Number(button.dataset.companyId);
-      const company = data.companies.find(c => c.id === id);
-      if (company) focusCompany(company);
+      const resultButton = event.target.closest(".chat-result-btn");
+      if (resultButton) {
+        const id = Number(resultButton.dataset.companyId);
+        const company = data.companies.find(c => c.id === id);
+        if (company) focusCompany(company);
+        return;
+      }
+      const exportButton = event.target.closest(".chat-export-btn");
+      if (exportButton) {
+        const exportData = exportStore[exportButton.dataset.exportId];
+        if (exportData) downloadCsv(exportData.filename, exportData.csv);
+      }
     });
 
     chatForm.addEventListener("submit", async event => {
@@ -1123,7 +1177,8 @@
         }
         chatHistory.push({ role: "user", content: question });
         const resultsHtml = chatResultsHtml(payload.company_ids || []);
-        appendChatMessage("assistant", `<p>${escapeHtml(payload.reply).replace(/\n/g, "<br>")}</p>${resultsHtml}`);
+        const exportHtml = chatExportHtml(payload.export);
+        appendChatMessage("assistant", `<p>${escapeHtml(payload.reply).replace(/\n/g, "<br>")}</p>${resultsHtml}${exportHtml}`);
         chatHistory.push({ role: "assistant", content: payload.reply });
       } catch (err) {
         typing.remove();
