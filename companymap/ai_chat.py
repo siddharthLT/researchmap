@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 import logging
 import re
@@ -15,6 +17,9 @@ MAX_TOOL_ROUNDS = 6
 DEFAULT_RADIUS_KM = 10.0
 DEFAULT_RESULT_LIMIT = 40
 MAX_RESULT_LIMIT = 100
+# Safety cap on how many rows a single chat turn can ever export, independent of
+# MAX_RESULT_LIMIT (which only bounds what the model sees in its own context).
+EXPORT_ROW_CAP = 2000
 
 KEYWORD_FIELDS = ("industry", "product_category", "sub_type", "segment", "notes")
 
@@ -223,12 +228,18 @@ def _search_companies(
                 nearby.append(company)
         nearby.sort(key=lambda c: distance_by_id[c.id])
         companies = nearby
+    elif min_revenue is not None:
+        # A revenue floor signals a "top companies" style ranking — order by
+        # revenue so both the model's answer and the export reflect "top".
+        companies.sort(key=lambda c: c.annual_revenue or 0, reverse=True)
 
+    total_matches = len(companies)
     result_limit = min(int(limit), MAX_RESULT_LIMIT) if limit else DEFAULT_RESULT_LIMIT
-    companies = companies[:result_limit]
+    visible = companies[:result_limit]
 
     return {
-        "count": len(companies),
+        "count": len(visible),
+        "total_matches": total_matches,
         "companies": [
             {
                 "id": company.id,
@@ -246,8 +257,11 @@ def _search_companies(
                 "description": company.notes[:280],
                 "distance_km": distance_by_id.get(company.id),
             }
-            for company in companies
+            for company in visible
         ],
+        # Internal only — the full (unsliced) match set for CSV export. Stripped
+        # before the tool result is serialized and sent to the model.
+        "_export_rows": [(company, distance_by_id.get(company.id)) for company in companies[:EXPORT_ROW_CAP]],
     }
 
 
@@ -291,6 +305,54 @@ def _resolve_reply(reply_text, model_company_ids, known_companies):
     return company_ids
 
 
+EXPORT_FIELDS = (
+    "Name", "City", "State", "Industry", "Product Category", "Sub-Type", "Segment",
+    "Employee Count", "Annual Revenue", "Has Funding", "Funding Data",
+    "Distance (km)", "Website", "Domain", "Notes",
+)
+
+
+def _build_csv_export(rows, message):
+    """Build a CSV of every company matched this turn (rows is a list of
+    (Company, distance_km_or_None) pairs, deduplicated and in match order)."""
+    if len(rows) <= 1:
+        return None
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(EXPORT_FIELDS)
+    for company, distance_km in rows:
+        writer.writerow([
+            company.name,
+            company.city,
+            company.state_code,
+            company.industry,
+            company.product_category,
+            company.sub_type,
+            company.segment,
+            company.employee_count if company.employee_count is not None else "",
+            company.annual_revenue if company.annual_revenue is not None else "",
+            "Yes" if company.funding_data else "No",
+            company.funding_data,
+            distance_km if distance_km is not None else "",
+            company.url,
+            company.domain,
+            company.notes,
+        ])
+
+    return {
+        "filename": _export_filename(message),
+        "csv": buffer.getvalue(),
+        "count": len(rows),
+    }
+
+
+def _export_filename(message):
+    slug = re.sub(r"[^a-z0-9]+", "-", (message or "").lower()).strip("-")
+    slug = slug[:60].rstrip("-")
+    return f"{slug or 'company-search'}.csv"
+
+
 def _assistant_message_dict(message):
     msg = {"role": "assistant", "content": message.content}
     if message.tool_calls:
@@ -320,6 +382,7 @@ def run_chat(message, history=None):
     messages.append({"role": "user", "content": message})
 
     known_companies = {}  # id -> name, accumulated from every search this turn
+    export_rows = {}  # id -> (Company, distance_km), accumulated from every search this turn
 
     for _ in range(MAX_TOOL_ROUNDS):
         response = client.chat.completions.create(
@@ -336,8 +399,12 @@ def run_chat(message, history=None):
         if not tool_calls:
             text = assistant_message.content or ""
             if not text:
-                return {"reply": "I couldn't find an answer.", "company_ids": []}
-            return {"reply": text, "company_ids": _resolve_reply(text, [], known_companies)}
+                return {"reply": "I couldn't find an answer.", "company_ids": [], "export": None}
+            return {
+                "reply": text,
+                "company_ids": _resolve_reply(text, [], known_companies),
+                "export": _build_csv_export(list(export_rows.values()), message),
+            }
 
         # Run every search_companies call first — even if the model also called
         # present_answer in the same turn — so known_companies is fully populated
@@ -352,6 +419,8 @@ def run_chat(message, history=None):
                 result = _search_companies(**args)
                 if "companies" in result:
                     known_companies.update({c["id"]: c["name"] for c in result["companies"]})
+                for company, distance in result.pop("_export_rows", []):
+                    export_rows.setdefault(company.id, (company, distance))
                 search_results[call.id] = result
             else:
                 search_results[call.id] = {"error": f"Unknown tool: {call.function.name}"}
@@ -360,7 +429,11 @@ def run_chat(message, history=None):
             args = json.loads(present_call.function.arguments)
             reply_text = args.get("message", "")
             company_ids = _resolve_reply(reply_text, args.get("company_ids", []), known_companies)
-            return {"reply": reply_text, "company_ids": company_ids}
+            return {
+                "reply": reply_text,
+                "company_ids": company_ids,
+                "export": _build_csv_export(list(export_rows.values()), message),
+            }
 
         messages.append(_assistant_message_dict(assistant_message))
         for call_id, result in search_results.items():
@@ -374,4 +447,5 @@ def run_chat(message, history=None):
     return {
         "reply": "I wasn't able to finish that search in time — try narrowing your question.",
         "company_ids": [],
+        "export": _build_csv_export(list(export_rows.values()), message),
     }
