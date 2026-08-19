@@ -80,7 +80,10 @@ class Command(BaseCommand):
             return True
         centroid = CITY_CENTROIDS.get((company.city, company.state_code))
         if not centroid:
-            return True
+            # No known centroid for this city, so the importer couldn't have set a
+            # fallback here — existing coordinates can only have come from a prior
+            # precise geocode. Nothing to upgrade.
+            return False
         return (
             abs(float(company.latitude) - centroid[0]) < 1e-6
             and abs(float(company.longitude) - centroid[1]) < 1e-6
