@@ -1,5 +1,6 @@
 import csv
 import io
+import time
 from decimal import Decimal
 
 import requests
@@ -10,6 +11,16 @@ from companymap.models import Company
 
 CENSUS_BATCH_URL = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
 BATCH_SIZE = 500
+
+# Census's TIGER address ranges miss a fair number of real addresses (corporate
+# campuses, newer developments). Nominatim (OpenStreetMap) draws on building/POI
+# data and often resolves what Census can't, so we fall back to it for whatever
+# Census leaves unmatched. Its usage policy caps unauthenticated use at ~1 req/sec
+# and requires an identifying User-Agent, so this fallback pass is deliberately
+# sequential and only runs on the (small) leftover set.
+NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
+NOMINATIM_USER_AGENT = "CompanyMapGeocoder/1.0 (internal research tool)"
+NOMINATIM_DELAY_SECONDS = 1.1
 
 
 class Command(BaseCommand):
@@ -44,10 +55,21 @@ class Command(BaseCommand):
             f"Geocoding {len(candidates)} companies via the US Census batch geocoder..."
         )
 
+        unmatched = []
         matched = 0
         for start in range(0, len(candidates), BATCH_SIZE):
             chunk = candidates[start:start + BATCH_SIZE]
-            matched += self._geocode_chunk(chunk)
+            chunk_matched = self._geocode_chunk(chunk)
+            matched += len(chunk_matched)
+            unmatched.extend(c for c in chunk if c.id not in chunk_matched)
+
+        if unmatched:
+            self.stdout.write(
+                f"Census matched {matched} of {len(candidates)}. "
+                f"Retrying {len(unmatched)} remaining addresses via Nominatim..."
+            )
+            nominatim_matched = self._geocode_with_nominatim(unmatched)
+            matched += nominatim_matched
 
         self.stdout.write(
             self.style.SUCCESS(f"Matched {matched} of {len(candidates)} addresses.")
@@ -84,7 +106,7 @@ class Command(BaseCommand):
             raise CommandError(f"Census geocoder request failed: {exc}") from exc
 
         by_id = {company.id: company for company in companies}
-        matched = 0
+        matched = set()
         for row in csv.reader(io.StringIO(response.text)):
             if len(row) < 3:
                 continue
@@ -94,6 +116,33 @@ class Command(BaseCommand):
             lon_str, lat_str = row[5].split(",")
             company.latitude = Decimal(lat_str)
             company.longitude = Decimal(lon_str)
+            company.save(update_fields=["latitude", "longitude"])
+            matched.add(company.id)
+        return matched
+
+    def _geocode_with_nominatim(self, companies):
+        matched = 0
+        for company in companies:
+            street = company.address.split(",")[0].strip()
+            zip_code = company.postal_code.split("-")[0].strip()
+            query = ", ".join(part for part in (street, company.city, f"{company.state_code} {zip_code}".strip()) if part)
+            time.sleep(NOMINATIM_DELAY_SECONDS)
+            try:
+                response = requests.get(
+                    NOMINATIM_URL,
+                    params={"format": "json", "limit": 1, "q": query},
+                    headers={"User-Agent": NOMINATIM_USER_AGENT},
+                    timeout=15,
+                )
+                response.raise_for_status()
+                results = response.json()
+            except (requests.RequestException, ValueError) as exc:
+                self.stdout.write(self.style.WARNING(f"Nominatim lookup failed for '{query}': {exc}"))
+                continue
+            if not results:
+                continue
+            company.latitude = Decimal(results[0]["lat"])
+            company.longitude = Decimal(results[0]["lon"])
             company.save(update_fields=["latitude", "longitude"])
             matched += 1
         return matched
