@@ -1167,6 +1167,12 @@
         populateCityFilter();
         renderStateShapes();
         applyFilters({ fit: true });
+
+        const focusId = new URLSearchParams(window.location.search).get("focus");
+        if (focusId) {
+          const target = data.companies.find(company => String(company.id) === focusId);
+          if (target) focusCompany(target);
+        }
       });
 
     const chatToggle = document.querySelector("#chat-toggle");
