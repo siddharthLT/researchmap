@@ -9,4 +9,5 @@ urlpatterns = [
     path("", views.map_view, name="map"),
     path("api/companies/", views.company_map_data, name="company_map_data"),
     path("api/chat/", views.chat_api, name="chat_api"),
+    path("company/<int:company_id>/pin/", views.company_pin_map, name="company_pin_map"),
 ]

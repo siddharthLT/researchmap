@@ -4,7 +4,8 @@ from collections import defaultdict
 
 from django.db.models import Count
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_POST
 
 from contactdb.models import Person
@@ -18,6 +19,15 @@ logger = logging.getLogger(__name__)
 
 def map_view(request):
     return render(request, "companymap/map.html")
+
+
+@xframe_options_sameorigin
+def company_pin_map(request, company_id):
+    company = get_object_or_404(
+        Company.objects.exclude(latitude__isnull=True).exclude(longitude__isnull=True),
+        id=company_id,
+    )
+    return render(request, "companymap/company_pin.html", {"company": company})
 
 
 @require_POST

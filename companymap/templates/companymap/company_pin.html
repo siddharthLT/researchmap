@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ company.name }} · Location</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    html, body, #pin-map { height: 100%; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .leaflet-popup-content { font-size: 13px; line-height: 1.4; }
+    .leaflet-popup-content strong { display: block; margin-bottom: 2px; }
+  </style>
+</head>
+<body>
+  <div id="pin-map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const lat = {{ company.latitude }};
+    const lng = {{ company.longitude }};
+    const name = "{{ company.name|escapejs }}";
+    const placeLabel = "{{ company.city|escapejs }}{% if company.city and company.state_code %}, {% endif %}{{ company.state_code|escapejs }}";
+
+    const map = L.map("pin-map", { zoomControl: true }).setView([lat, lng], 16);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    const popupEl = document.createElement("div");
+    const nameEl = document.createElement("strong");
+    nameEl.textContent = name;
+    popupEl.appendChild(nameEl);
+    if (placeLabel) {
+      const locEl = document.createElement("span");
+      locEl.textContent = placeLabel;
+      popupEl.appendChild(locEl);
+    }
+
+    L.marker([lat, lng]).addTo(map).bindPopup(popupEl).openPopup();
+  </script>
+</body>
+</html>
