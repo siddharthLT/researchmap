@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ connector }}'s Warm Connections</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#eef0ee;
+    --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --border:rgba(11,11,11,0.10);
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+    --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+      --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --s5:#d55181; --s6:#008300; --s7:#9085e9;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --s5:#d55181; --s6:#008300; --s7:#9085e9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page); color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5; margin: 0; padding: 0 24px 96px;
+  }
+  a { color: var(--s1); }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .backlink { display: inline-block; margin-top: 24px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted); text-decoration: none; }
+  .backlink:hover { color: var(--s1); }
+  .masthead { padding: 20px 0 40px; border-bottom: 1px solid var(--border); }
+  .eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: clamp(32px, 4.5vw, 46px); line-height: 1.12; margin: 0 0 16px; text-wrap: balance; max-width: 18ch; }
+  .dek { font-size: 17px; color: var(--ink-2); max-width: 62ch; margin: 0 0 20px; }
+  .meta { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin: 40px 0; border-radius: 10px; overflow: hidden; }
+  .stat { background: var(--surface); padding: 22px 20px; }
+  .stat-value { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 32px; font-variant-numeric: tabular-nums; margin-bottom: 4px; }
+  .stat-label { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px 26px 20px; margin: 40px 0; }
+  .chart-card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; margin: 0 0 20px; font-family: "IBM Plex Mono", monospace; }
+  .bar-row { display: grid; grid-template-columns: 168px 1fr 76px; align-items: center; gap: 14px; padding: 9px 0; }
+  .bar-label { font-size: 13.5px; display: flex; align-items: center; gap: 8px; color: var(--ink-2); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: none; }
+  .bar-track { background: var(--surface-2); border-radius: 4px; height: 16px; overflow: hidden; }
+  .bar-fill { background: var(--c); height: 100%; border-radius: 4px; min-width: 3px; }
+  .bar-value { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; text-align: right; font-variant-numeric: tabular-nums; }
+  .bar-value .n { font-weight: 600; }
+  .bar-value .p { color: var(--muted); margin-left: 6px; }
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 32px 0 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px 6px 10px; font-size: 12.5px; color: var(--ink-2); text-decoration: none; background: var(--surface); }
+  .chip:hover { border-color: var(--c, var(--muted)); }
+  .chip-n { font-family: "IBM Plex Mono", monospace; color: var(--muted); }
+  .cat-section { margin-top: 56px; scroll-margin-top: 20px; }
+  .cat-title { display: flex; gap: 16px; align-items: flex-start; }
+  .rule { width: 4px; align-self: stretch; min-height: 44px; background: var(--c); border-radius: 2px; flex: none; }
+  .cat-title h2 { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 24px; margin: 0 0 6px; display: flex; align-items: baseline; gap: 10px; }
+  .cat-count { font-family: "IBM Plex Mono", monospace; font-size: 14px; font-weight: 500; color: var(--ink-2); background: var(--surface-2); border-radius: 999px; padding: 2px 10px; border: 1px solid var(--c); }
+  .table-wrap { margin-top: 18px; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px; }
+  thead th { text-align: left; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 11px 16px; border-bottom: 1px solid var(--grid); position: sticky; top: 0; background: var(--surface); }
+  tbody td { padding: 10px 16px; border-bottom: 1px solid var(--grid); color: var(--ink-2); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--ink); font-weight: 500; }
+  tbody tr:hover td { background: var(--surface-2); }
+  td.links { white-space: nowrap; }
+  .btn-row { display: flex; gap: 6px; }
+  .icon-btn { display: inline-flex; align-items: center; gap: 5px; font-family: "IBM Plex Mono", monospace; font-size: 11px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink-2); padding: 4px 8px; cursor: pointer; text-decoration: none; line-height: 1; white-space: nowrap; }
+  button.icon-btn:hover { border-color: var(--c, var(--s1)); color: var(--ink); }
+  .icon-btn.is-disabled { opacity: 0.35; cursor: not-allowed; }
+  .icon-btn.copied { border-color: #0ca30c; color: #0ca30c; }
+  .icon-btn.copy-failed, .icon-btn.load-failed { border-color: var(--s2); color: var(--s2); }
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .bar-row { grid-template-columns: 100px 1fr 60px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="{% url 'contactdb:home' %}">&larr; ContactDB</a>
+  <header class="masthead">
+    <p class="eyebrow">Warm Connections &middot; Prior Connection = {{ connector }}</p>
+    <h1>Where {{ connector }}'s network sits in the pharma value chain</h1>
+    <p class="dek">All {{ total }} of {{ connector }}'s warm connections, segmented by the role their employer plays in pharma: manufacturing (CDMO), research/testing (CRO), reagents &amp; lab tools, equipment, the pharma/biotech sponsors who buy from all of those, pharma-focused consulting, and everything outside the industry. Email and LinkedIn are looked up live from the database when you click a link button, never shipped in the page itself.</p>
+    <div class="meta">
+      <span>{{ total }} contacts</span>
+      <span>{{ segments|length }} segments</span>
+    </div>
+  </header>
+
+  <section class="stats">
+    <div class="stat"><div class="stat-value">{{ total }}</div><div class="stat-label">Warm connections analyzed</div></div>
+    {% for segment in segments|slice:":3" %}
+      <div class="stat"><div class="stat-value">{{ segment.count }} <span style="font-size:16px;color:var(--muted)">({{ segment.pct }}%)</span></div><div class="stat-label">{{ segment.label }}</div></div>
+    {% endfor %}
+  </section>
+
+  <div class="chart-card">
+    <h3>Segment breakdown</h3>
+    {% for segment in segments %}
+      <div class="bar-row">
+        <div class="bar-label"><span class="dot" style="--c: var({{ segment.color }})"></span>{{ segment.label }}</div>
+        <div class="bar-track"><div class="bar-fill" style="--c: var({{ segment.color }}); width:{{ segment.pct }}%"></div></div>
+        <div class="bar-value"><span class="n">{{ segment.count }}</span><span class="p">{{ segment.pct }}%</span></div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <nav class="jump">
+    {% for segment in segments %}
+      <a class="chip" href="#cat-{{ segment.value }}"><span class="dot" style="--c: var({{ segment.color }})"></span>{{ segment.label }} <span class="chip-n">{{ segment.count }}</span></a>
+    {% endfor %}
+  </nav>
+
+  {% for segment in segments %}
+    <section class="cat-section" id="cat-{{ segment.value }}" style="--c: var({{ segment.color }})">
+      <div class="cat-title">
+        <span class="rule"></span>
+        <div>
+          <h2>{{ segment.label }}<span class="cat-count">{{ segment.count }}</span></h2>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Title</th><th>Company</th><th>Location</th><th>Links</th></tr></thead>
+          <tbody>
+            {% for person in segment.people %}
+              <tr>
+                <td>{{ person.name }}</td>
+                <td>{{ person.title|default:"—" }}</td>
+                <td>{{ person.company|default:"—" }}</td>
+                <td>{{ person.location|default:"—" }}</td>
+                <td class="links">
+                  <div class="btn-row">
+                    <button type="button" class="icon-btn{% if not person.has_linkedin %} is-disabled{% endif %}" data-person-id="{{ person.id }}" data-action="linkedin" {% if not person.has_linkedin %}disabled aria-label="No LinkedIn on file"{% else %}onclick="openLinkedIn(this)" aria-label="Open {{ person.name }}'s LinkedIn profile"{% endif %}>
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 13 3M8.5 3H13v4.5M13 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/></svg>LinkedIn
+                    </button>
+                    <button type="button" class="icon-btn{% if not person.has_email %} is-disabled{% endif %}" data-person-id="{{ person.id }}" data-action="email" {% if not person.has_email %}disabled aria-label="No email on file"{% else %}onclick="copyEmail(this)" aria-label="Copy {{ person.name }}'s email"{% endif %}>
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">Copy email</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endfor %}
+
+  <footer>{{ total }} contacts &middot; Prior Connection = {{ connector }} &middot; email/LinkedIn fetched on click, never embedded in this page</footer>
+</div>
+
+<script>
+  var CONTACT_CACHE = {};
+  var CONTACT_URL_BASE = "/contactdb/api/people/";
+
+  function fetchContact(id) {
+    if (CONTACT_CACHE[id]) return Promise.resolve(CONTACT_CACHE[id]);
+    return fetch(CONTACT_URL_BASE + id + "/contact/")
+      .then(function (res) { if (!res.ok) throw new Error("request failed"); return res.json(); })
+      .then(function (data) { CONTACT_CACHE[id] = data; return data; });
+  }
+
+  function openLinkedIn(btn) {
+    var id = btn.getAttribute("data-person-id");
+    fetchContact(id).then(function (data) {
+      if (data.linkedin_url) {
+        window.open(data.linkedin_url, "_blank", "noopener");
+      } else {
+        flash(btn, "load-failed", "No profile");
+      }
+    }).catch(function () { flash(btn, "load-failed", "Failed"); });
+  }
+
+  function fallbackCopy(text, cb) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      cb(ok);
+    } catch (e) {
+      cb(false);
+    }
+  }
+
+  function flash(btn, cls, label) {
+    var original = btn.innerHTML;
+    var originalClass = btn.className;
+    btn.classList.add(cls);
+    btn.innerHTML = '<span class="btn-txt">' + label + '</span>';
+    setTimeout(function () {
+      btn.className = originalClass;
+      btn.innerHTML = original;
+    }, 1400);
+  }
+
+  function copyEmail(btn) {
+    var id = btn.getAttribute("data-person-id");
+    var original = btn.innerHTML;
+    var labelHTML = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">';
+
+    function settle(ok) {
+      btn.classList.remove('copied', 'copy-failed');
+      btn.classList.add(ok ? 'copied' : 'copy-failed');
+      btn.innerHTML = labelHTML + (ok ? 'Copied' : 'Copy failed') + '</span>';
+      setTimeout(function () {
+        btn.innerHTML = original;
+        btn.classList.remove('copied', 'copy-failed');
+      }, 1400);
+    }
+
+    fetchContact(id).then(function (data) {
+      if (!data.email) { settle(false); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(data.email).then(function () { settle(true); }).catch(function () {
+          fallbackCopy(data.email, settle);
+        });
+      } else {
+        fallbackCopy(data.email, settle);
+      }
+    }).catch(function () { settle(false); });
+  }
+</script>
+</body>
+</html>

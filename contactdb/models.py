@@ -74,6 +74,15 @@ class PersonList(models.Model):
 
 
 class Person(models.Model):
+    class Segment(models.TextChoices):
+        CDMO = "cdmo", "CDMO"
+        CRO = "cro", "CRO"
+        REAGENTS = "reagents", "Reagents & Lab Tools"
+        EQUIPMENT = "equipment", "Equipment & Devices"
+        PHARMA = "pharma", "Pharma / Biotech"
+        CONSULTING = "consulting", "Consulting & BD"
+        NON_PHARMA = "non_pharma", "Non-Pharma"
+
     name = models.CharField(max_length=255)
     title = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True)
@@ -90,6 +99,12 @@ class Person(models.Model):
         max_length=255,
         blank=True,
         help_text="Free-text company name, used when there's no matching Company record.",
+    )
+    segment = models.CharField(max_length=16, choices=Segment.choices, blank=True)
+    prior_connections = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Names of the warm-connection network(s) this person belongs to.",
     )
     notes = models.TextField(blank=True)
     raw_data = models.JSONField(default=dict, blank=True)
