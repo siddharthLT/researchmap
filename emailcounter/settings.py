@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'companymap',
     'contactdb',
+    'conferences',
 ]
 
 MIDDLEWARE = [

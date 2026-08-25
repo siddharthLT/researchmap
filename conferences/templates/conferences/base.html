@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Conferences{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#eef0ee;
+      --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+      --grid:#e1e0d9; --border:rgba(11,11,11,0.10);
+      --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+      --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+        --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+        --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+        --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+        --s5:#d55181; --s6:#008300; --s7:#9085e9;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+      --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --s5:#d55181; --s6:#008300; --s7:#9085e9;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--page); color: var(--ink);
+      font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.5; margin: 0; padding: 0 24px 96px;
+    }
+    a { color: var(--s1); }
+    .wrap { max-width: 1200px; margin: 0 auto; }
+    .topnav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0; border-bottom: 1px solid var(--border);
+    }
+    .topnav .brand {
+      font-family: "IBM Plex Mono", monospace; font-size: 12px;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+      text-decoration: none;
+    }
+    .topnav .brand strong { color: var(--ink); }
+    .topnav nav { display: flex; gap: 8px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 6px 12px 6px 10px; font-size: 12.5px; color: var(--ink-2);
+      text-decoration: none; background: var(--surface); cursor: pointer;
+    }
+    .chip:hover { border-color: var(--c, var(--s1)); text-decoration: none; }
+    .chip.active { background: var(--ink); color: var(--page); border-color: var(--ink); }
+    .chip .n { font-family: "IBM Plex Mono", monospace; color: var(--muted); font-size: 11px; }
+    .chip.active .n { color: var(--page); opacity: .7; }
+
+    .masthead { padding: 40px 0 32px; border-bottom: 1px solid var(--border); }
+    .eyebrow {
+      font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); margin: 0 0 14px;
+    }
+    .eyebrow a { color: var(--muted); }
+    h1 {
+      font-family: "Source Serif 4", Georgia, serif; font-weight: 600;
+      font-size: clamp(28px, 4vw, 40px); line-height: 1.14; margin: 0 0 14px; text-wrap: balance;
+    }
+    h2.page-title {
+      font-family: "Source Serif 4", Georgia, serif; font-weight: 600;
+      font-size: clamp(24px, 3.4vw, 32px); line-height: 1.16; margin: 0 0 14px;
+      display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    }
+    .dek { font-size: 16px; color: var(--ink-2); max-width: 68ch; margin: 0 0 18px; }
+    .meta {
+      font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted);
+      display: flex; gap: 18px; flex-wrap: wrap;
+    }
+    .cat-count {
+      font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 500;
+      color: var(--ink-2); background: var(--surface-2); border-radius: 999px;
+      padding: 2px 10px; border: 1px solid var(--c, var(--border));
+    }
+
+    .list-grid { display: grid; gap: 10px; margin-top: 18px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    .list-card {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 16px 18px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; text-decoration: none; color: var(--ink);
+    }
+    .list-card:hover { border-color: var(--s1); text-decoration: none; }
+    .list-card .name { font-weight: 600; color: var(--ink); }
+    .list-card .desc { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
+    .list-card .count {
+      flex: none; font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+      color: var(--ink-2); background: var(--surface-2); border-radius: 999px;
+      padding: 3px 11px; border: 1px solid var(--border);
+    }
+
+    .empty-state {
+      color: var(--muted); font-size: 14px; padding: 20px;
+      border: 1px dashed var(--border); border-radius: 10px; margin-top: 18px;
+    }
+    footer {
+      margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--muted); font-family: "IBM Plex Mono", monospace;
+    }
+    {% block extra_style %}{% endblock %}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topnav">
+      <a class="brand" href="{% url 'conferences:home' %}"><strong>Conferences</strong></a>
+      <nav>
+        <a class="chip" href="{% url 'conferences:home' %}">All Conferences</a>
+        <a class="chip" href="{% url 'contactdb:home' %}">ContactDB</a>
+        <a class="chip" href="{% url 'companymap:map' %}">Company Map</a>
+      </nav>
+    </div>
+    {% block content %}{% endblock %}
+  </div>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,341 @@
+{% extends "conferences/base.html" %}
+
+{% block title %}{{ conference.name }} · Conferences{% endblock %}
+
+{% block extra_style %}
+  .tag-badge {
+    display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+    font-weight: 600; letter-spacing: .02em; padding: 3px 8px; border-radius: 999px;
+    white-space: nowrap; margin: 0 4px 4px 0;
+  }
+  .tag-speaker_session { background: color-mix(in srgb, var(--s1) 20%, var(--surface)); color: var(--s1); }
+  .tag-poster_session { background: color-mix(in srgb, var(--s5) 20%, var(--surface)); color: var(--s5); }
+  .tag-exhibitor { background: color-mix(in srgb, var(--s4) 25%, var(--surface)); color: var(--s4); }
+  .tag-networking_session { background: color-mix(in srgb, var(--s3) 20%, var(--surface)); color: var(--s3); }
+
+  .tabbar { display: flex; gap: 8px; margin: 24px 0 0; border-bottom: 1px solid var(--border); }
+  .tab-btn {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+    background: none; border: 0; border-bottom: 2px solid transparent;
+    padding: 10px 4px; margin-right: 20px; cursor: pointer;
+  }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--s1); }
+  .tab-panel { display: none; padding-top: 22px; }
+  .tab-panel.active { display: block; }
+
+  .filter-bar {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    margin-bottom: 18px; padding: 12px 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  .filter-count { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); margin-left: auto; }
+
+  .company-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .company-card {
+    padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  }
+  .company-card .name { font-weight: 600; margin-bottom: 6px; }
+  .company-card .booth { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--muted); margin-bottom: 8px; }
+  .company-card .links { display: flex; gap: 6px; margin-top: 8px; }
+  .icon-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: "IBM Plex Mono", monospace; font-size: 11px;
+    border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+    color: var(--ink-2); padding: 4px 8px; cursor: pointer; text-decoration: none; line-height: 1;
+  }
+  .icon-btn:hover { border-color: var(--s1); color: var(--s1); text-decoration: none; }
+
+  .cal-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; font-size: 12.5px; color: var(--muted); }
+  .cal-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+  .cal-days { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; }
+  .cal-day-col { flex: 1 1 260px; min-width: 240px; }
+  .cal-day-heading {
+    font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 17px;
+    margin: 0 0 10px;
+  }
+  .cal-unscheduled { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .cal-unscheduled .cal-chip {
+    font-size: 11.5px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; color: var(--ink-2);
+  }
+  .cal-grid {
+    position: relative; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface); overflow: hidden;
+  }
+  .cal-hour-line {
+    position: absolute; left: 0; right: 0; border-top: 1px solid var(--grid);
+  }
+  .cal-hour-label {
+    position: absolute; left: 6px; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+    color: var(--muted); transform: translateY(-50%); background: var(--surface); padding: 0 4px 0 0;
+  }
+  .cal-track { position: relative; margin-left: 46px; height: 100%; }
+  .cal-block {
+    position: absolute; border-radius: 6px; padding: 4px 7px; overflow: hidden;
+    cursor: pointer; border: 1px solid var(--border); font-size: 11px; line-height: 1.3;
+    box-sizing: border-box;
+  }
+  .cal-block .t { font-family: "IBM Plex Mono", monospace; font-size: 9.5px; opacity: .8; display: block; }
+  .cal-block .n { font-weight: 600; display: block; }
+  .cal-block:hover { filter: brightness(1.08); z-index: 5; }
+
+  .cal-type-keynote { background: color-mix(in srgb, var(--s1) 22%, var(--surface)); border-color: var(--s1); }
+  .cal-type-panel { background: color-mix(in srgb, var(--s5) 22%, var(--surface)); border-color: var(--s5); }
+  .cal-type-workshop { background: color-mix(in srgb, var(--s7) 22%, var(--surface)); border-color: var(--s7); }
+  .cal-type-networking { background: color-mix(in srgb, var(--s3) 22%, var(--surface)); border-color: var(--s3); }
+  .cal-type-meal { background: color-mix(in srgb, var(--s4) 22%, var(--surface)); border-color: var(--s4); }
+  .cal-type-logistics { background: var(--surface-2); border-color: var(--border); }
+  .cal-type-exhibitor_presentation { background: color-mix(in srgb, var(--s2) 22%, var(--surface)); border-color: var(--s2); }
+  .cal-type-other { background: var(--surface-2); border-color: var(--border); }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(11,11,11,.5);
+    z-index: 1000; align-items: center; justify-content: center; padding: 24px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border-radius: 12px; max-width: 520px; width: 100%;
+    max-height: 84vh; overflow-y: auto; padding: 26px; box-shadow: 0 24px 60px rgba(0,0,0,.3);
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 14px; right: 14px; background: none; border: 0; cursor: pointer;
+    font-size: 18px; color: var(--muted); line-height: 1; padding: 4px;
+  }
+  .modal-close:hover { color: var(--ink); }
+  .modal .modal-type {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .05em; color: var(--muted); margin: 0 0 8px;
+  }
+  .modal h3 {
+    font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 21px;
+    margin: 0 0 10px; line-height: 1.25;
+  }
+  .modal .modal-meta { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+  .modal .modal-section { margin-top: 14px; }
+  .modal .modal-section h4 {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--muted); margin: 0 0 6px;
+  }
+  .modal .modal-section p, .modal .modal-section li { font-size: 14px; color: var(--ink-2); margin: 0; }
+  .modal .modal-section ul { margin: 0; padding-left: 18px; }
+{% endblock %}
+
+{% block content %}
+  <header class="masthead">
+    <p class="eyebrow"><a href="{% url 'conferences:home' %}">Conferences</a></p>
+    <h2 class="page-title">{{ conference.name }}<span class="cat-count" style="--c: var(--s1)">{{ companies|length }} companies</span></h2>
+    <div class="meta">
+      <span>{{ conference.location }}</span>
+      {% if conference.start_date %}<span>{{ conference.start_date|date:"M j" }}{% if conference.end_date %}–{{ conference.end_date|date:"j, Y" }}{% endif %}</span>{% endif %}
+      <span>{{ total_sessions }} sessions</span>
+    </div>
+  </header>
+
+  <div class="tabbar">
+    <button type="button" class="tab-btn active" data-tab="companies">Companies</button>
+    <button type="button" class="tab-btn" data-tab="sessions">Sessions</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-companies">
+    {% if tag_options %}
+      <div class="filter-bar">
+        {% for opt in tag_options %}
+          <span class="chip filter-chip" data-value="{{ opt.value }}" style="--c: var(--s1)">{{ opt.label }} <span class="n">{{ opt.count }}</span></span>
+        {% endfor %}
+        <span class="filter-count" id="filter-count"></span>
+      </div>
+    {% endif %}
+    {% if companies %}
+      <div class="company-grid" id="company-grid">
+        {% for company in companies %}
+          <div class="company-card" data-tags="{{ company.data_tags }}">
+            <div class="name">{{ company.name }}</div>
+            {% if company.tag_badges %}
+              <div>
+                {% for badge in company.tag_badges %}<span class="tag-badge tag-{{ badge.value }}">{{ badge.label }}</span>{% endfor %}
+              </div>
+            {% endif %}
+            {% if company.booth %}<div class="booth">Booth {{ company.booth }}</div>{% endif %}
+            <div class="links">
+              {% if company.website %}<a class="icon-btn" href="{{ company.website }}" target="_blank" rel="noopener">Website</a>{% endif %}
+              {% if company.linkedin_url %}<a class="icon-btn" href="{{ company.linkedin_url }}" target="_blank" rel="noopener">LinkedIn</a>{% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">No companies on file for this conference yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="tab-panel" id="tab-sessions">
+    <div class="cal-legend">
+      <span><span class="dot" style="background: var(--s1)"></span>Keynote</span>
+      <span><span class="dot" style="background: var(--s5)"></span>Panel</span>
+      <span><span class="dot" style="background: var(--s7)"></span>Workshop</span>
+      <span><span class="dot" style="background: var(--s3)"></span>Networking</span>
+      <span><span class="dot" style="background: var(--s4)"></span>Meal / Social</span>
+      <span><span class="dot" style="background: var(--s2)"></span>Exhibitor Presentation</span>
+      <span><span class="dot" style="background: var(--muted)"></span>Logistics / Other</span>
+    </div>
+    {% if days %}
+      <div class="cal-days">
+        {% for day in days %}
+          <div class="cal-day-col">
+            <h3 class="cal-day-heading">{{ day.date|date:"l, M j" }}</h3>
+            {% if day.banners %}
+              <div class="cal-unscheduled">
+                {% for session in day.banners %}
+                  <span class="cal-chip session-trigger" data-session="{{ session.data }}">{{ session.title|truncatechars:28 }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+            {% if day.unscheduled %}
+              <div class="cal-unscheduled">
+                {% for session in day.unscheduled %}
+                  <span class="cal-chip session-trigger" data-session="{{ session.data }}">{{ session.title|truncatechars:28 }}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+            <div class="cal-grid" style="height: {{ hour_marks|length|add:"-1" }}00px;">
+              {% for mark in hour_marks %}
+                <div class="cal-hour-line" style="top: {{ mark.top_pct }}%;"></div>
+                <div class="cal-hour-label" style="top: {{ mark.top_pct }}%;">{{ mark.label }}</div>
+              {% endfor %}
+              <div class="cal-track">
+                {% for block in day.blocks %}
+                  <div class="cal-block cal-type-{{ block.session.session_type }} session-trigger"
+                       data-session="{{ block.session.data }}"
+                       style="top: {{ block.top_pct }}%; height: {{ block.height_pct }}%; left: calc({{ block.left_pct }}% + 2px); width: calc({{ block.width_pct }}% - 4px);">
+                    <span class="t">{{ block.session.start_time|time:"g:i A" }}</span>
+                    <span class="n">{{ block.session.title|truncatechars:60 }}</span>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">No sessions on file for this conference yet.</div>
+    {% endif %}
+  </div>
+
+  <footer>{{ conference.name }} &middot; {{ companies|length }} companies &middot; {{ total_sessions }} sessions</footer>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <button type="button" class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      <p class="modal-type" id="modal-type"></p>
+      <h3 id="modal-title"></h3>
+      <p class="modal-meta" id="modal-meta"></p>
+      <div class="modal-section" id="modal-company-section" style="display:none;">
+        <h4>Presenting Company</h4>
+        <p id="modal-company"></p>
+      </div>
+      <div class="modal-section" id="modal-speakers-section" style="display:none;">
+        <h4>Speakers</h4>
+        <ul id="modal-speakers"></ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-btn').forEach(function (b) { b.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  (function initCompanyFilters() {
+    var active = new Set();
+    var cards = Array.from(document.querySelectorAll('.company-card'));
+    var countEl = document.getElementById('filter-count');
+
+    function apply() {
+      var visible = 0;
+      cards.forEach(function (card) {
+        var tags = (card.dataset.tags || '').split('|').filter(Boolean);
+        var ok = active.size === 0 || tags.some(function (t) { return active.has(t); });
+        card.style.display = ok ? '' : 'none';
+        if (ok) visible++;
+      });
+      if (countEl) countEl.textContent = visible + ' of ' + cards.length + ' shown';
+    }
+
+    document.querySelectorAll('.filter-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var val = chip.dataset.value;
+        if (active.has(val)) { active.delete(val); chip.classList.remove('active'); }
+        else { active.add(val); chip.classList.add('active'); }
+        apply();
+      });
+    });
+    apply();
+  })();
+
+  (function initModal() {
+    var overlay = document.getElementById('modal-overlay');
+    var typeEl = document.getElementById('modal-type');
+    var titleEl = document.getElementById('modal-title');
+    var metaEl = document.getElementById('modal-meta');
+    var companySection = document.getElementById('modal-company-section');
+    var companyEl = document.getElementById('modal-company');
+    var speakersSection = document.getElementById('modal-speakers-section');
+    var speakersEl = document.getElementById('modal-speakers');
+
+    function open(session) {
+      typeEl.textContent = session.type;
+      titleEl.textContent = session.title;
+      var metaParts = [session.day, session.time];
+      if (session.location) metaParts.push(session.location);
+      metaEl.textContent = metaParts.filter(Boolean).join(' · ');
+
+      if (session.company) {
+        companyEl.textContent = session.company;
+        companySection.style.display = '';
+      } else {
+        companySection.style.display = 'none';
+      }
+
+      if (session.speakers && session.speakers.length) {
+        speakersEl.innerHTML = session.speakers.map(function (s) {
+          var name = (s.name || '').replace(/[<>&]/g, function (c) { return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; });
+          var aff = (s.affiliation || '').replace(/[<>&]/g, function (c) { return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; });
+          return '<li>' + name + (aff ? ' — ' + aff : '') + '</li>';
+        }).join('');
+        speakersSection.style.display = '';
+      } else {
+        speakersSection.style.display = 'none';
+      }
+
+      overlay.classList.add('open');
+    }
+
+    document.querySelectorAll('.session-trigger').forEach(function (el) {
+      el.addEventListener('click', function () {
+        try {
+          open(JSON.parse(el.dataset.session));
+        } catch (e) { /* ignore malformed session data */ }
+      });
+    });
+
+    document.getElementById('modal-close').addEventListener('click', function () {
+      overlay.classList.remove('open');
+    });
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) overlay.classList.remove('open');
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') overlay.classList.remove('open');
+    });
+  })();
+</script>
+{% endblock %}

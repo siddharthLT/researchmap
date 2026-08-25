@@ -1,0 +1,32 @@
+{% extends "conferences/base.html" %}
+
+{% block title %}Conferences{% endblock %}
+
+{% block content %}
+  <header class="masthead">
+    <p class="eyebrow">Conferences</p>
+    <h1>Event intelligence</h1>
+    <p class="dek">Companies attending, exhibiting, speaking, and networking at each event, plus a full session timeline for the ones we've researched.</p>
+    <div class="meta">
+      <span>{{ conferences|length }} conference{{ conferences|length|pluralize }}</span>
+    </div>
+  </header>
+
+  {% if conferences %}
+    <div class="list-grid">
+      {% for conf in conferences %}
+        <a class="list-card" href="{% url 'conferences:conference_detail' conf.slug %}">
+          <div>
+            <div class="name">{{ conf.name }}</div>
+            <p class="desc">{{ conf.location }}{% if conf.start_date %} &middot; {{ conf.start_date|date:"M j" }}{% if conf.end_date %}–{{ conf.end_date|date:"j, Y" }}{% endif %}{% endif %}</p>
+            <p class="desc">{{ conf.company_count }} companies &middot; {{ conf.session_count }} sessions</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">No conferences imported yet.</div>
+  {% endif %}
+
+  <footer>Conferences &middot; {{ conferences|length }} event{{ conferences|length|pluralize }}</footer>
+{% endblock %}
