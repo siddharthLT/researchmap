@@ -84,17 +84,27 @@ def company_list_detail(request, slug):
         .prefetch_related("decision_makers")
         .order_by("name")
     )
+    warm_company_ids = set(
+        Person.objects.exclude(prior_connections=[])
+        .filter(company_id__in=[c.id for c in companies])
+        .values_list("company_id", flat=True)
+        .distinct()
+    )
     for company in companies:
+        company.has_warm_connection = company.id in warm_company_ids
         company.export_json = json.dumps(
             {
                 "Name": company.name,
                 "Website": company.url,
+                "Modality": company.modality,
+                "Segment": company.segment,
                 "Location": ", ".join(part for part in (company.city, company.state_code) if part),
                 "Industry": company.industry,
                 "Product Category": company.product_category,
                 "Employees": company.employee_count,
                 "Annual Revenue": company.annual_revenue,
                 "Decision Makers": company.decision_maker_names,
+                "Warm Connection": "Yes" if company.has_warm_connection else "",
             }
         )
     return render(

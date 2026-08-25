@@ -28,6 +28,11 @@ class Company(models.Model):
     product_category = models.TextField(blank=True)
     sub_type = models.CharField(max_length=255, blank=True)
     segment = models.CharField(max_length=255, blank=True)
+    modality = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Comma-separated therapeutic modality focus, e.g. Small Molecules, Biologics, Cell Therapy.",
+    )
     priority = models.CharField(max_length=64, blank=True)
     account_list_source = models.CharField(max_length=255, blank=True)
     annual_revenue = models.BigIntegerField(null=True, blank=True)
