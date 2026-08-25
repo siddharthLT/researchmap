@@ -78,6 +78,7 @@
           <tr>
             <th class="select-col"><input type="checkbox" class="select-all-check" id="select-all"></th>
             <th>Name</th>
+            <th>Connected via</th>
             <th>Links</th>
             <th>Title</th>
             <th>Company</th>
@@ -89,6 +90,7 @@
             <tr class="person-row{% if person.notes %} has-notes{% endif %}"{% if person.notes %} data-target="notes-{{ person.id }}"{% endif %} data-row="{{ person.export_json }}" data-modality="{{ person.data_modality }}" data-segment="{{ person.data_segment }}" data-warm="{{ person.data_warm }}" data-role="{{ person.data_role }}">
               <td class="select-col"><input type="checkbox" class="row-check"></td>
               <td>{% if person.notes %}<span class="expand-indicator">&rsaquo;</span>{% endif %}{{ person.name }}{% if person.stakeholder_role %} <span class="role-badge role-{{ person.stakeholder_role }}">{{ person.role_label }}</span>{% endif %}</td>
+              <td>{% if person.prior_connections %}<span class="warm-flame" aria-hidden="true">🔥</span>{{ person.prior_connections|join:", " }}{% else %}—{% endif %}</td>
               <td class="links">
                 <div class="btn-row">
                   {% if person.linkedin_url %}
@@ -117,7 +119,7 @@
             </tr>
             {% if person.notes %}
               <tr class="notes-row" id="notes-{{ person.id }}" hidden>
-                <td colspan="6" class="wrap notes-cell">{{ person.notes|linebreaksbr }}</td>
+                <td colspan="7" class="wrap notes-cell">{{ person.notes|linebreaksbr }}</td>
               </tr>
             {% endif %}
           {% endfor %}
