@@ -7,6 +7,8 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
+from contactdb.models import Person
+
 from .ai_chat import run_chat
 from .models import Company
 
@@ -77,11 +79,23 @@ def company_map_data(request):
             }
         )
 
+    warm_company_ids = set(
+        Person.objects.exclude(prior_connections=[])
+        .exclude(company__isnull=True)
+        .values_list("company_id", flat=True)
+        .distinct()
+    )
+    companies_data = []
+    for company in companies:
+        data = company.as_map_dict()
+        data["has_warm_connection"] = company.id in warm_company_ids
+        companies_data.append(data)
+
     return JsonResponse(
         {
             "states": state_counts,
             "cities": sorted(cities, key=lambda item: (item["state_code"], item["city"])),
-            "companies": [company.as_map_dict() for company in companies],
+            "companies": companies_data,
         }
     )
 

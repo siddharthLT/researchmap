@@ -356,6 +356,31 @@
       max-width: 24px;
       max-height: 24px;
     }
+    .marker-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
+    }
+    .warm-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      line-height: 1;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,.35);
+    }
+    .warm-flame {
+      display: inline-block;
+      margin-right: 4px;
+    }
     .tooltip {
       min-width: 220px;
       line-height: 1.35;
@@ -633,6 +658,7 @@
           <span>companies mapped</span>
         </div>
         <div class="legend"><span class="donut" aria-hidden="true"><img class="donut-img" src="https://www.svgrepo.com/show/505199/donut.svg" alt=""></span><span>$10M+ annual revenue: definitely visit</span></div>
+        <div class="legend"><span aria-hidden="true">🔥</span><span>Warm connection at this company</span></div>
       </section>
       <section class="list">
         <h2 id="list-title">Companies</h2>
@@ -739,12 +765,14 @@
 
     function companyIcon(company) {
       const highRevenue = company.is_high_revenue ? " high-revenue" : "";
-      const size = company.is_high_revenue ? 32 : 26;
+      const markerSize = company.is_high_revenue ? 32 : 26;
+      const badge = company.has_warm_connection ? `<span class="warm-badge" aria-label="Warm connection" title="Warm connection">🔥</span>` : "";
+      const wrapSize = markerSize + 10;
       return L.divIcon({
         className: "",
-        html: `<span class="company-marker${highRevenue}">${company.is_high_revenue ? donutImgHtml() : ""}</span>`,
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2]
+        html: `<span class="marker-wrap"><span class="company-marker${highRevenue}">${company.is_high_revenue ? donutImgHtml() : ""}</span>${badge}</span>`,
+        iconSize: [wrapSize, wrapSize],
+        iconAnchor: [wrapSize / 2, wrapSize / 2]
       });
     }
 
@@ -881,9 +909,10 @@
       const makers = company.decision_makers.map(maker => maker.name).filter(Boolean).join(", ");
       return `
         <div class="tooltip">
-          <strong>${escapeHtml(company.name)}</strong>
+          <strong>${company.has_warm_connection ? '<span class="warm-flame" aria-hidden="true">🔥</span>' : ""}${escapeHtml(company.name)}</strong>
           <span>${escapeHtml(company.city)}, ${escapeHtml(company.state_code)}</span>
           <span>${escapeHtml(company.domain || "No domain")}</span>
+          ${company.has_warm_connection ? `<span>🔥 Warm connection on file</span>` : ""}
           ${company.is_high_revenue ? `<span>${escapeHtml(formatMoney(company.annual_revenue))} annual revenue</span>` : ""}
           <span>Funding: ${escapeHtml(company.funding_data || "Not provided")}</span>
           <span>Revenue: ${escapeHtml(company.revenue_data || "Not provided")}</span>
@@ -918,15 +947,17 @@
         () => {
           focusCompany(company);
         },
-        company.is_high_revenue
+        company.is_high_revenue,
+        company.has_warm_connection
       ));
     }
 
-    function addListButton(label, count, action, highRevenue = false) {
+    function addListButton(label, count, action, highRevenue = false, hasWarmConnection = false) {
       const button = document.createElement("button");
       button.type = "button";
-      const icon = highRevenue ? `<span class="donut" aria-label="Definitely visit">${donutImgHtml()}</span>` : "";
-      button.innerHTML = `<span class="list-label">${icon}<span>${escapeHtml(label)}</span></span><span class="count">${escapeHtml(count)}</span>`;
+      const donutIcon = highRevenue ? `<span class="donut" aria-label="Definitely visit">${donutImgHtml()}</span>` : "";
+      const warmIcon = hasWarmConnection ? `<span aria-label="Warm connection" title="Warm connection">🔥</span>` : "";
+      button.innerHTML = `<span class="list-label">${donutIcon}${warmIcon}<span>${escapeHtml(label)}</span></span><span class="count">${escapeHtml(count)}</span>`;
       button.addEventListener("click", action);
       list.appendChild(button);
     }
