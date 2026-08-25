@@ -2,50 +2,15 @@
 
 {% block title %}{{ person_list.name }} · ContactDB{% endblock %}
 
-{% block extra_style %}
-  .list-header { margin-bottom: 18px; }
-  .list-header h2 { margin: 0 0 4px; font-size: 1.35rem; }
-  .list-header p { margin: 0; color: var(--muted); font-size: .9rem; }
-  .table-wrap {
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    box-shadow: var(--shadow);
-    overflow: auto;
-  }
-  table { border-collapse: collapse; width: 100%; font-size: .86rem; }
-  th, td {
-    text-align: left;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--line);
-    white-space: nowrap;
-  }
-  th {
-    background: #fcfaf6;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    font-size: .72rem;
-    position: sticky;
-    top: 0;
-  }
-  td.wrap { white-space: normal; max-width: 320px; }
-  tr:last-child td { border-bottom: none; }
-  .empty-state {
-    color: var(--muted);
-    font-size: .9rem;
-    padding: 18px;
-    border: 1px dashed var(--line);
-    border-radius: 10px;
-  }
-{% endblock %}
-
 {% block content %}
-  <p class="breadcrumb"><a href="{% url 'contactdb:home' %}">ContactDB</a> / People</p>
-  <div class="list-header">
-    <h2>{{ person_list.name }}</h2>
-    <p>{{ people|length }} contact{{ people|length|pluralize }}{% if person_list.description %} — {{ person_list.description }}{% endif %}</p>
-  </div>
+  <header class="masthead">
+    <p class="eyebrow"><a href="{% url 'contactdb:home' %}">ContactDB</a> &middot; People</p>
+    <h2 class="page-title">{{ person_list.name }}<span class="cat-count" style="--c: var(--s5)">{{ people|length }}</span></h2>
+    {% if person_list.description %}<p class="dek">{{ person_list.description }}</p>{% endif %}
+    <div class="meta">
+      <span>{{ people|length }} contact{{ people|length|pluralize }}</span>
+    </div>
+  </header>
 
   {% if people %}
     <div class="table-wrap">
@@ -55,22 +20,41 @@
             <th>Name</th>
             <th>Title</th>
             <th>Company</th>
-            <th>Email</th>
             <th>Phone</th>
-            <th>LinkedIn</th>
             <th>Notes</th>
+            <th>Links</th>
           </tr>
         </thead>
         <tbody>
           {% for person in people %}
             <tr>
               <td>{{ person.name }}</td>
-              <td>{{ person.title|default:"—" }}</td>
+              <td class="wrap">{{ person.title|default:"—" }}</td>
               <td>{{ person.display_company|default:"—" }}</td>
-              <td>{% if person.email %}<a href="mailto:{{ person.email }}">{{ person.email }}</a>{% else %}—{% endif %}</td>
               <td>{{ person.phone|default:"—" }}</td>
-              <td>{% if person.linkedin_url %}<a href="{{ person.linkedin_url }}" target="_blank" rel="noopener">Profile</a>{% else %}—{% endif %}</td>
-              <td class="wrap">{{ person.notes|default:"—" }}</td>
+              <td class="wrap">{{ person.notes|linebreaksbr|default:"—" }}</td>
+              <td class="links">
+                <div class="btn-row">
+                  {% if person.linkedin_url %}
+                    <a class="icon-btn" href="{{ person.linkedin_url }}" target="_blank" rel="noopener" aria-label="Open {{ person.name }}'s LinkedIn profile">
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 13 3M8.5 3H13v4.5M13 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/></svg>LinkedIn
+                    </a>
+                  {% else %}
+                    <span class="icon-btn is-disabled" aria-label="No LinkedIn on file">
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 13 3M8.5 3H13v4.5M13 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/></svg>LinkedIn
+                    </span>
+                  {% endif %}
+                  {% if person.email %}
+                    <button type="button" class="icon-btn" data-email="{{ person.email }}" onclick="copyEmail(this)" title="{{ person.email }}" aria-label="Copy {{ person.name }}'s email">
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">Copy email</span>
+                    </button>
+                  {% else %}
+                    <span class="icon-btn is-disabled" aria-label="No email on file">
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">Copy email</span>
+                    </span>
+                  {% endif %}
+                </div>
+              </td>
             </tr>
           {% endfor %}
         </tbody>
@@ -79,4 +63,51 @@
   {% else %}
     <div class="empty-state">This list has no people yet.</div>
   {% endif %}
+
+  <footer>ContactDB &middot; {{ person_list.name }} &middot; {{ people|length }} contacts</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function fallbackCopy(text, cb) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      cb(ok);
+    } catch (e) {
+      cb(false);
+    }
+  }
+
+  function copyEmail(btn) {
+    var email = btn.getAttribute('data-email');
+    var original = btn.innerHTML;
+    var labelHTML = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">';
+
+    function settle(ok) {
+      btn.classList.remove('copied', 'copy-failed');
+      btn.classList.add(ok ? 'copied' : 'copy-failed');
+      btn.innerHTML = labelHTML + (ok ? 'Copied' : 'Copy failed') + '</span>';
+      setTimeout(function () {
+        btn.innerHTML = original;
+        btn.classList.remove('copied', 'copy-failed');
+      }, 1400);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(email).then(function () { settle(true); }).catch(function () {
+        fallbackCopy(email, settle);
+      });
+    } else {
+      fallbackCopy(email, settle);
+    }
+  }
+</script>
 {% endblock %}

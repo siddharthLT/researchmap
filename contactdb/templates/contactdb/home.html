@@ -2,108 +2,66 @@
 
 {% block title %}ContactDB{% endblock %}
 
-{% block extra_style %}
-  .sections {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 28px;
-  }
-  @media (max-width: 860px) {
-    .sections { grid-template-columns: 1fr; }
-  }
-  .section h2 {
-    margin: 0 0 4px;
-    font-size: 1.1rem;
-  }
-  .section p.hint {
-    margin: 0 0 16px;
-    color: var(--muted);
-    font-size: .88rem;
-  }
-  .list-grid {
-    display: grid;
-    gap: 12px;
-  }
-  .list-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 16px 18px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    box-shadow: var(--shadow);
-  }
-  .list-card:hover { border-color: var(--blue); }
-  .list-card .name {
-    font-weight: 700;
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .list-card .desc {
-    margin: 4px 0 0;
-    color: var(--muted);
-    font-size: .82rem;
-  }
-  .list-card .count {
-    flex: none;
-    background: #eef2ff;
-    color: var(--blue);
-    font-weight: 700;
-    font-size: .85rem;
-    padding: 6px 12px;
-    border-radius: 999px;
-  }
-  .empty-state {
-    color: var(--muted);
-    font-size: .9rem;
-    padding: 18px;
-    border: 1px dashed var(--line);
-    border-radius: 10px;
-  }
-{% endblock %}
-
 {% block content %}
-  <div class="sections">
-    <section class="section">
-      <h2>Companies</h2>
-      <p class="hint">Saved lists of companies from the account database.</p>
-      {% if company_lists %}
-        <div class="list-grid">
-          {% for list in company_lists %}
-            <a class="list-card" href="{% url 'contactdb:company_list_detail' list.slug %}">
-              <div>
-                <div class="name">{{ list.name }}</div>
-                {% if list.description %}<p class="desc">{{ list.description }}</p>{% endif %}
-              </div>
-              <span class="count">{{ list.item_count }}</span>
-            </a>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="empty-state">No company lists yet.</div>
-      {% endif %}
-    </section>
+  <header class="masthead">
+    <p class="eyebrow">ContactDB</p>
+    <h1>Company &amp; people lists</h1>
+    <p class="dek">Saved lists of companies and contacts, pulled from the account database and warm-connection imports. Pick a list to see everyone in it.</p>
+    <div class="meta">
+      <span>{{ company_lists|length }} company list{{ company_lists|length|pluralize }}</span>
+      <span>{{ person_lists|length }} people list{{ person_lists|length|pluralize }}</span>
+    </div>
+  </header>
 
-    <section class="section">
-      <h2>People</h2>
-      <p class="hint">Saved lists of contacts and decision makers.</p>
-      {% if person_lists %}
-        <div class="list-grid">
-          {% for list in person_lists %}
-            <a class="list-card" href="{% url 'contactdb:person_list_detail' list.slug %}">
-              <div>
-                <div class="name">{{ list.name }}</div>
-                {% if list.description %}<p class="desc">{{ list.description }}</p>{% endif %}
-              </div>
-              <span class="count">{{ list.item_count }}</span>
-            </a>
-          {% endfor %}
-        </div>
-      {% else %}
-        <div class="empty-state">No people lists yet.</div>
-      {% endif %}
-    </section>
-  </div>
+  <section class="cat-section" style="--c: var(--s1)">
+    <div class="cat-title">
+      <span class="rule"></span>
+      <div>
+        <h2>Companies<span class="cat-count">{{ company_lists|length }}</span></h2>
+        <p class="cat-desc">Saved lists of companies from the account database.</p>
+      </div>
+    </div>
+    {% if company_lists %}
+      <div class="list-grid">
+        {% for list in company_lists %}
+          <a class="list-card" style="--c: var(--s1)" href="{% url 'contactdb:company_list_detail' list.slug %}">
+            <div>
+              <div class="name">{{ list.name }}</div>
+              {% if list.description %}<p class="desc">{{ list.description }}</p>{% endif %}
+            </div>
+            <span class="count">{{ list.item_count }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">No company lists yet.</div>
+    {% endif %}
+  </section>
+
+  <section class="cat-section" style="--c: var(--s5)">
+    <div class="cat-title">
+      <span class="rule"></span>
+      <div>
+        <h2>People<span class="cat-count">{{ person_lists|length }}</span></h2>
+        <p class="cat-desc">Saved lists of contacts and decision makers.</p>
+      </div>
+    </div>
+    {% if person_lists %}
+      <div class="list-grid">
+        {% for list in person_lists %}
+          <a class="list-card" style="--c: var(--s5)" href="{% url 'contactdb:person_list_detail' list.slug %}">
+            <div>
+              <div class="name">{{ list.name }}</div>
+              {% if list.description %}<p class="desc">{{ list.description }}</p>{% endif %}
+            </div>
+            <span class="count">{{ list.item_count }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">No people lists yet.</div>
+    {% endif %}
+  </section>
+
+  <footer>ContactDB &middot; company map database + warm-connection imports</footer>
 {% endblock %}
