@@ -386,6 +386,51 @@
         max-height: 60%;
       }
     }
+    .universe-link {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px 5px 6px;
+      border-radius: 999px;
+      background: var(--ink);
+      color: #fff;
+      text-decoration: none;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      box-shadow: var(--shadow);
+      z-index: 950;
+      transition: transform .15s ease;
+    }
+    .universe-link:hover { transform: translateY(-1px); text-decoration: none; }
+    .universe-icon {
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--blue);
+      flex: none;
+    }
+    .universe-icon svg { width: 11px; height: 11px; position: relative; z-index: 1; }
+    .universe-icon::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: var(--blue);
+      opacity: .6;
+      animation: universe-pulse 1.8s ease-out infinite;
+    }
+    @keyframes universe-pulse {
+      0% { transform: scale(1); opacity: .55; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
     .chat-toggle {
       position: fixed;
       right: 24px;
@@ -542,6 +587,16 @@
   </style>
 </head>
 <body>
+  <a class="universe-link" href="{% url 'contactdb:home' %}" aria-label="View Universe">
+    <span class="universe-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+      </svg>
+    </span>
+    View Universe
+  </a>
   <div class="shell">
     <aside class="rail">
       <div class="brand">
