@@ -134,6 +134,7 @@
               <tr>
                 <th>Name</th>
                 <th>Role</th>
+                <th>Connected via</th>
                 <th>Links</th>
                 <th>Title</th>
                 <th>Phone</th>
@@ -144,6 +145,7 @@
                 <tr>
                   <td>{{ person.name }}</td>
                   <td>{% if person.stakeholder_role %}<span class="role-badge role-{{ person.stakeholder_role }}">{{ person.get_stakeholder_role_display }}</span>{% else %}—{% endif %}</td>
+                  <td>{% if person.prior_connections %}<span class="warm-flame" aria-hidden="true">🔥</span>{{ person.prior_connections|join:", " }}{% else %}—{% endif %}</td>
                   <td class="links">
                     <div class="btn-row">
                       {% if person.linkedin_url %}
