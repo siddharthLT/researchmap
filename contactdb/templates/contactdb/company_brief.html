@@ -1,0 +1,149 @@
+{% extends "contactdb/base.html" %}
+
+{% block title %}{{ company.name }} · ContactDB{% endblock %}
+
+{% block extra_style %}
+  .company-meta-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px;
+    margin: 20px 0; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  }
+  .company-meta-grid .field-label {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 4px;
+  }
+  .company-meta-grid .field-value { font-size: 13.5px; color: var(--ink); }
+  .list-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+{% endblock %}
+
+{% block content %}
+  <header class="masthead">
+    <p class="eyebrow"><a href="{% url 'contactdb:home' %}">ContactDB</a> &middot; Company Brief</p>
+    <h2 class="page-title">{% if company.has_warm_connection %}<span class="warm-flame" aria-hidden="true" title="Warm connection">🔥</span>{% endif %}{{ company.name }}<span class="cat-count" style="--c: var(--s1)">{{ total_people }} contact{{ total_people|pluralize }}</span></h2>
+    {% if company.notes %}<p class="dek">{{ company.notes|linebreaksbr|truncatewords:60 }}</p>{% endif %}
+    <div class="meta">
+      {% if company.url %}<span><a href="{{ company.url }}" target="_blank" rel="noopener">{{ company.domain|default:company.url }}</a></span>{% endif %}
+      {% if company.city or company.state_code %}<span>{{ company.city }}{% if company.city and company.state_code %}, {% endif %}{{ company.state_code }}</span>{% endif %}
+    </div>
+    {% if company_lists %}
+      <div class="list-chips">
+        {% for cl in company_lists %}
+          <a class="chip" style="--c: var(--s1)" href="{% url 'contactdb:company_list_detail' cl.slug %}">{{ cl.name }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </header>
+
+  <div class="company-meta-grid">
+    <div><div class="field-label">Industry</div><div class="field-value">{{ company.industry|default:"—" }}</div></div>
+    <div><div class="field-label">Segment</div><div class="field-value">{{ company.segment|default:"—" }}</div></div>
+    <div><div class="field-label">Modality</div><div class="field-value">{{ company.modality|default:"—" }}</div></div>
+    <div><div class="field-label">Employees</div><div class="field-value">{{ company.employee_count|default:"—" }}</div></div>
+    <div><div class="field-label">Annual revenue</div><div class="field-value">{% if company.annual_revenue %}${{ company.annual_revenue|floatformat:0 }}{% else %}—{% endif %}</div></div>
+    <div><div class="field-label">Funding</div><div class="field-value">{{ company.funding_data|default:"—"|truncatewords:12 }}</div></div>
+  </div>
+
+  {% if sections %}
+    {% for section in sections %}
+      <section class="cat-section" style="--c: var(--s5)">
+        <div class="cat-title">
+          <span class="rule"></span>
+          <div>
+            <h2>{% if section.list %}{{ section.list.name }}{% else %}Not in a people list{% endif %}<span class="cat-count">{{ section.people|length }}</span></h2>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Links</th>
+                <th>Title</th>
+                <th>Phone</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for person in section.people %}
+                <tr>
+                  <td>{{ person.name }}</td>
+                  <td class="links">
+                    <div class="btn-row">
+                      {% if person.linkedin_url %}
+                        <a class="icon-btn" href="{{ person.linkedin_url }}" target="_blank" rel="noopener" aria-label="Open {{ person.name }}'s LinkedIn profile">
+                          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 13 3M8.5 3H13v4.5M13 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/></svg>LinkedIn
+                        </a>
+                      {% else %}
+                        <span class="icon-btn is-disabled" aria-label="No LinkedIn on file">
+                          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 13 3M8.5 3H13v4.5M13 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/></svg>LinkedIn
+                        </span>
+                      {% endif %}
+                      {% if person.email %}
+                        <button type="button" class="icon-btn" data-email="{{ person.email }}" onclick="copyEmail(this)" title="{{ person.email }}" aria-label="Copy {{ person.name }}'s email">
+                          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">Copy email</span>
+                        </button>
+                      {% else %}
+                        <span class="icon-btn is-disabled" aria-label="No email on file">
+                          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">Copy email</span>
+                        </span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td class="wrap">{{ person.title|default:"—" }}</td>
+                  <td>{{ person.phone|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">No contacts on file for this company yet.</div>
+  {% endif %}
+
+  <footer>ContactDB &middot; {{ company.name }} &middot; {{ total_people }} contacts across {{ sections|length }} list{{ sections|length|pluralize }}</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function fallbackCopy(text, cb) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      cb(ok);
+    } catch (e) {
+      cb(false);
+    }
+  }
+
+  function copyEmail(btn) {
+    var email = btn.getAttribute('data-email');
+    var original = btn.innerHTML;
+    var labelHTML = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">';
+
+    function settle(ok) {
+      btn.classList.remove('copied', 'copy-failed');
+      btn.classList.add(ok ? 'copied' : 'copy-failed');
+      btn.innerHTML = labelHTML + (ok ? 'Copied' : 'Copy failed') + '</span>';
+      setTimeout(function () {
+        btn.innerHTML = original;
+        btn.classList.remove('copied', 'copy-failed');
+      }, 1400);
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(email).then(function () { settle(true); }).catch(function () {
+        fallbackCopy(email, settle);
+      });
+    } else {
+      fallbackCopy(email, settle);
+    }
+  }
+</script>
+{% endblock %}
