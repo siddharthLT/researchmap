@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, render
 
 from companymap.models import Company
 
-from .models import CompanyList, Person, PersonList
+from .models import CompanyBrief, CompanyList, Person, PersonList
 
 CONNECTOR_SLUGS = {
     "vedant": "Vedant",
@@ -282,6 +282,8 @@ def company_brief(request, company_id):
     if unlisted:
         section_list.append({"list": None, "people": unlisted})
 
+    brief = CompanyBrief.objects.filter(company=company).first()
+
     return render(
         request,
         "contactdb/company_brief.html",
@@ -290,5 +292,6 @@ def company_brief(request, company_id):
             "company_lists": company_lists,
             "sections": section_list,
             "total_people": people.count(),
+            "brief": brief,
         },
     )

@@ -13,6 +13,24 @@
   }
   .company-meta-grid .field-value { font-size: 13.5px; color: var(--ink); }
   .list-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+
+  .brief-overview {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px;
+    padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    margin: 18px 0;
+  }
+  .brief-block { margin: 18px 0; }
+  .brief-block h3 {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 8px;
+  }
+  .brief-block p { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+  .brief-block ul { margin: 0; padding-left: 18px; font-size: 14px; color: var(--ink-2); line-height: 1.6; }
+  .brief-dm-list li { margin-bottom: 4px; }
+  .brief-dm-list .dm-note { color: var(--muted); font-size: 12.5px; }
+  .signals-period { color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .brief-sources { font-size: 12.5px; color: var(--muted); word-break: break-word; }
+  .brief-meta { font-size: 12px; color: var(--muted); margin: 0; }
 {% endblock %}
 
 {% block content %}
@@ -41,6 +59,65 @@
     <div><div class="field-label">Annual revenue</div><div class="field-value">{% if company.annual_revenue %}${{ company.annual_revenue|floatformat:0 }}{% else %}—{% endif %}</div></div>
     <div><div class="field-label">Funding</div><div class="field-value">{{ company.funding_data|default:"—"|truncatewords:12 }}</div></div>
   </div>
+
+  {% if brief %}
+    <section class="cat-section" style="--c: var(--s6)">
+      <div class="cat-title">
+        <span class="rule"></span>
+        <div>
+          <h2>Research Brief</h2>
+          <p class="brief-meta">Source: {{ brief.source_document|default:"internal research" }} &middot; updated {{ brief.updated_at|date:"M j, Y" }}</p>
+        </div>
+      </div>
+
+      {% if brief.legal_name or brief.founded or brief.headquarters or brief.employee_count or brief.ownership or brief.global_presence %}
+        <div class="brief-overview">
+          {% if brief.legal_name %}<div><div class="field-label">Legal name</div><div class="field-value">{{ brief.legal_name }}</div></div>{% endif %}
+          {% if brief.founded %}<div><div class="field-label">Founded</div><div class="field-value">{{ brief.founded }}</div></div>{% endif %}
+          {% if brief.headquarters %}<div><div class="field-label">Headquarters</div><div class="field-value">{{ brief.headquarters }}</div></div>{% endif %}
+          {% if brief.employee_count %}<div><div class="field-label">Employees</div><div class="field-value">{{ brief.employee_count }}</div></div>{% endif %}
+          {% if brief.ownership %}<div><div class="field-label">Ownership</div><div class="field-value">{{ brief.ownership }}</div></div>{% endif %}
+          {% if brief.global_presence %}<div><div class="field-label">Global presence</div><div class="field-value">{{ brief.global_presence }}</div></div>{% endif %}
+        </div>
+      {% endif %}
+
+      {% if brief.nature %}<div class="brief-block"><h3>Nature of the Company</h3><p>{{ brief.nature }}</p></div>{% endif %}
+      {% if brief.service_model %}<div class="brief-block"><h3>Service Model</h3><p>{{ brief.service_model }}</p></div>{% endif %}
+      {% if brief.client_profile %}<div class="brief-block"><h3>Client Profile</h3><p>{{ brief.client_profile }}</p></div>{% endif %}
+      {% if brief.modality_focus %}<div class="brief-block"><h3>Modality Focus</h3><p>{{ brief.modality_focus }}</p></div>{% endif %}
+      {% if brief.therapeutic_focus %}<div class="brief-block"><h3>Therapeutic Focus</h3><p>{{ brief.therapeutic_focus }}</p></div>{% endif %}
+      {% if brief.trial_phase_preference %}<div class="brief-block"><h3>Trial Phase Preference</h3><p>{{ brief.trial_phase_preference }}</p></div>{% endif %}
+
+      {% if brief.decision_makers %}
+        <div class="brief-block">
+          <h3>Decision Makers Profiled</h3>
+          <ul class="brief-dm-list">
+            {% for dm in brief.decision_makers %}
+              <li><strong>{{ dm.name }}</strong>{% if dm.title %} &mdash; {{ dm.title }}{% endif %}{% if dm.note %} <span class="dm-note">({{ dm.note }})</span>{% endif %}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if brief.latest_signals %}
+        <div class="brief-block">
+          <h3>Latest Signals{% if brief.latest_signals_period %} <span class="signals-period">({{ brief.latest_signals_period }})</span>{% endif %}</h3>
+          <ul>
+            {% for signal in brief.latest_signals %}<li>{{ signal }}</li>{% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if brief.opportunity_assessment %}<div class="brief-block"><h3>Opportunity Assessment</h3><p>{{ brief.opportunity_assessment }}</p></div>{% endif %}
+      {% if brief.summary %}<div class="brief-block"><h3>Summary</h3><p>{{ brief.summary }}</p></div>{% endif %}
+      {% if brief.sources %}
+        <div class="brief-block">
+          <h3>Sources</h3>
+          <p class="brief-sources">{{ brief.sources|join:" · " }}</p>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
 
   {% if sections %}
     {% for section in sections %}
