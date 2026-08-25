@@ -95,15 +95,19 @@ def company_list_detail(request, slug):
     )
     modality_counts = Counter()
     segment_counts = Counter()
+    state_counts = Counter()
     for company in companies:
         company.has_warm_connection = company.id in warm_company_ids
         company.modality_tags = [t.strip() for t in company.modality.split(",") if t.strip()]
         company.data_modality = "|".join(company.modality_tags)
         company.data_segment = company.segment
+        company.data_state = company.state_code
         company.data_warm = "yes" if company.has_warm_connection else "no"
         modality_counts.update(company.modality_tags)
         if company.segment:
             segment_counts[company.segment] += 1
+        if company.state_code:
+            state_counts[company.state_code] += 1
         company.export_json = json.dumps(
             {
                 "Name": company.name,
@@ -121,6 +125,7 @@ def company_list_detail(request, slug):
         )
     modality_options = sorted(modality_counts.items(), key=lambda kv: (-kv[1], kv[0]))
     segment_options = sorted(segment_counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    state_options = sorted(state_counts.items(), key=lambda kv: (-kv[1], kv[0]))
     return render(
         request,
         "contactdb/company_list_detail.html",
@@ -129,6 +134,7 @@ def company_list_detail(request, slug):
             "companies": companies,
             "modality_options": modality_options,
             "segment_options": segment_options,
+            "state_options": state_options,
             "warm_count": len(warm_company_ids),
         },
     )
