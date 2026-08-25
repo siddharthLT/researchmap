@@ -35,6 +35,16 @@
           </div>
         </div>
       {% endif %}
+      {% if state_options %}
+        <div class="filter-group">
+          <span class="filter-label">State</span>
+          <div class="filter-chips filter-state">
+            {% for value, count in state_options %}
+              <span class="filter-chip" data-value="{{ value }}">{{ value }} <span class="n">{{ count }}</span></span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
       {% if warm_count %}
         <div class="filter-group">
           <span class="filter-label">Warm connection</span>
@@ -69,7 +79,7 @@
         </thead>
         <tbody>
           {% for company in companies %}
-            <tr data-row="{{ company.export_json }}" data-modality="{{ company.data_modality }}" data-segment="{{ company.data_segment }}" data-warm="{{ company.data_warm }}">
+            <tr data-row="{{ company.export_json }}" data-modality="{{ company.data_modality }}" data-segment="{{ company.data_segment }}" data-state="{{ company.data_state }}" data-warm="{{ company.data_warm }}">
               <td class="select-col"><input type="checkbox" class="row-check"></td>
               <td>{% if company.has_warm_connection %}<span class="warm-flame" aria-hidden="true" title="Warm connection">🔥</span>{% endif %}{{ company.name }}</td>
               <td class="links">
@@ -86,6 +96,15 @@
                   <a class="icon-btn" href="{% url 'contactdb:company_brief' company.id %}" aria-label="Open {{ company.name }}'s company brief">
                     <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h6L12.5 5v8.5a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z"/><path d="M9.5 2.5V5h3"/><path d="M5.5 8h5M5.5 10.5h5"/></svg>Brief
                   </a>
+                  {% if company.latitude and company.longitude %}
+                    <button type="button" class="icon-btn" data-map-lat="{{ company.latitude }}" data-map-lng="{{ company.longitude }}" data-map-name="{{ company.name }}" data-map-address="{{ company.city }}{% if company.city and company.state_code %}, {% endif %}{{ company.state_code }}" aria-label="Show {{ company.name }} on the map">
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14.5S3 9.8 3 6.2a5 5 0 0 1 10 0c0 3.6-5 8.3-5 8.3Z"/><circle cx="8" cy="6.2" r="1.8"/></svg>Map
+                    </button>
+                  {% else %}
+                    <span class="icon-btn is-disabled" aria-label="No location on file">
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14.5S3 9.8 3 6.2a5 5 0 0 1 10 0c0 3.6-5 8.3-5 8.3Z"/><circle cx="8" cy="6.2" r="1.8"/></svg>Map
+                    </span>
+                  {% endif %}
                 </div>
               </td>
               <td class="wrap">{{ company.modality|default:"—" }}</td>
@@ -105,6 +124,35 @@
   {% endif %}
 
   <footer>ContactDB &middot; {{ company_list.name }} &middot; {{ companies|length }} companies</footer>
+
+  <div class="map-modal-overlay" id="map-modal-overlay">
+    <div class="map-modal">
+      <div class="map-modal-header">
+        <span id="map-modal-title"></span>
+        <button type="button" class="map-modal-close" id="map-modal-close" aria-label="Close">&times;</button>
+      </div>
+      <iframe id="map-modal-frame" class="map-modal-frame" title="Company location" loading="lazy"></iframe>
+      <div class="map-modal-footer">
+        <span id="map-modal-address"></span>
+        <a id="map-modal-osm-link" href="#" target="_blank" rel="noopener">Open in OpenStreetMap &#8599;</a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_style %}
+  <style>
+    .map-modal-overlay { position: fixed; inset: 0; background: rgba(11,11,11,.55); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+    .map-modal-overlay.open { display: flex; }
+    .map-modal { background: var(--surface); border-radius: 10px; width: min(560px, 100%); max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,.35); border: 1px solid var(--border); }
+    .map-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 600; color: var(--ink); }
+    .map-modal-close { background: none; border: 0; font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink-2); padding: 0 4px; }
+    .map-modal-close:hover { color: var(--ink); }
+    .map-modal-frame { width: 100%; height: 360px; border: 0; display: block; }
+    .map-modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; font-size: 12px; color: var(--ink-2); }
+    .map-modal-footer a { color: var(--s1); text-decoration: none; }
+    .map-modal-footer a:hover { text-decoration: underline; }
+  </style>
 {% endblock %}
 
 {% block extra_js %}
@@ -125,8 +173,47 @@
     groups: [
       { chipSelector: ".filter-modality .filter-chip", attr: "modality" },
       { chipSelector: ".filter-segment .filter-chip", attr: "segment" },
+      { chipSelector: ".filter-state .filter-chip", attr: "state" },
       { chipSelector: ".filter-warm .filter-chip", attr: "warm" },
     ],
   });
+
+  (function initMapModal() {
+    const overlay = document.getElementById("map-modal-overlay");
+    const frame = document.getElementById("map-modal-frame");
+    const titleEl = document.getElementById("map-modal-title");
+    const addressEl = document.getElementById("map-modal-address");
+    const osmLink = document.getElementById("map-modal-osm-link");
+    if (!overlay) return;
+
+    function openMapModal(lat, lng, name, address) {
+      const delta = 0.01;
+      const bbox = [lng - delta, lat - delta, lng + delta, lat + delta].join("%2C");
+      frame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
+      titleEl.textContent = name || "";
+      addressEl.textContent = address || "";
+      osmLink.href = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=15/${lat}/${lng}`;
+      overlay.classList.add("open");
+    }
+
+    function closeMapModal() {
+      overlay.classList.remove("open");
+      frame.src = "about:blank";
+    }
+
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-map-lat]");
+      if (btn) {
+        openMapModal(btn.dataset.mapLat, btn.dataset.mapLng, btn.dataset.mapName, btn.dataset.mapAddress);
+        return;
+      }
+      if (e.target === overlay || e.target.closest("#map-modal-close")) {
+        closeMapModal();
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeMapModal();
+    });
+  })();
 </script>
 {% endblock %}
