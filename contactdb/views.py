@@ -1,3 +1,5 @@
+import re
+
 from django.db.models import Count
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -21,6 +23,31 @@ SEGMENT_COLOR = {
     Person.Segment.CONSULTING: "--s6",
     Person.Segment.NON_PHARMA: "--s7",
 }
+
+# "High fit" = works at a supply-side vendor (CDMO/CRO/reagents/equipment) AND
+# holds a role that's likely to influence or approve a vendor relationship
+# (BD, C-suite, marketing, data/tech, transformation, or presales).
+HIGH_FIT_SEGMENTS = {
+    Person.Segment.CDMO,
+    Person.Segment.CRO,
+    Person.Segment.REAGENTS,
+    Person.Segment.EQUIPMENT,
+}
+HIGH_FIT_ROLE_PATTERN = re.compile(
+    r"\b("
+    r"business\s+development|bd|partnerships?|alliance(?:s|\s+management)?"
+    r"|chief\s+\w+(\s+\w+)?\s+officer|ce+o|cfo|coo|cto|cio|cmo|cso|chro|cbo"
+    r"|marketing"
+    r"|data|informatics|analytics|\bai\b|technology|\btech\b|software|digital"
+    r"|transformation"
+    r"|pre[- ]?sales|solutions?\s+engineer|sales\s+engineer"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _is_high_fit(segment, title):
+    return segment in HIGH_FIT_SEGMENTS and bool(HIGH_FIT_ROLE_PATTERN.search(title or ""))
 
 
 def home(request):
@@ -85,6 +112,7 @@ def connection_universe(request, slug):
                 "segment": person.segment,
                 "has_email": bool(person.email),
                 "has_linkedin": bool(person.linkedin_url),
+                "high_fit": _is_high_fit(person.segment, person.title),
             }
         )
 
@@ -109,6 +137,7 @@ def connection_universe(request, slug):
             }
         )
     segments.sort(key=lambda s: -s["count"])
+    high_fit_total = sum(1 for row in rows if row["high_fit"])
 
     return render(
         request,
@@ -118,6 +147,7 @@ def connection_universe(request, slug):
             "slug": slug,
             "total": total,
             "segments": segments,
+            "high_fit_total": high_fit_total,
         },
     )
 

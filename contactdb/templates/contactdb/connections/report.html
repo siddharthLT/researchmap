@@ -79,6 +79,10 @@
   tbody tr:last-child td { border-bottom: none; }
   tbody td:first-child { color: var(--ink); font-weight: 500; }
   tbody tr:hover td { background: var(--surface-2); }
+  tr.high-fit td { background: color-mix(in srgb, var(--s3) 16%, var(--surface)); }
+  tr.high-fit:hover td { background: color-mix(in srgb, var(--s3) 26%, var(--surface)); }
+  .legend { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin: 12px 0 0; }
+  .legend .swatch { width: 12px; height: 12px; border-radius: 3px; background: color-mix(in srgb, var(--s3) 40%, var(--surface)); border: 1px solid var(--border); }
   td.links { white-space: nowrap; }
   .btn-row { display: flex; gap: 6px; }
   .icon-btn { display: inline-flex; align-items: center; gap: 5px; font-family: "IBM Plex Mono", monospace; font-size: 11px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink-2); padding: 4px 8px; cursor: pointer; text-decoration: none; line-height: 1; white-space: nowrap; }
@@ -103,7 +107,9 @@
     <div class="meta">
       <span>{{ total }} contacts</span>
       <span>{{ segments|length }} segments</span>
+      <span>{{ high_fit_total }} high fit</span>
     </div>
+    <div class="legend"><span class="swatch"></span>High fit &mdash; works at a CDMO/CRO/reagents/equipment company in a BD, CXO, marketing, data/tech, transformation, or presales role</div>
   </header>
 
   <section class="stats">
@@ -140,14 +146,11 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Title</th><th>Company</th><th>Location</th><th>Links</th></tr></thead>
+          <thead><tr><th>Name</th><th>Links</th><th>Title</th><th>Company</th><th>Location</th></tr></thead>
           <tbody>
             {% for person in segment.people %}
-              <tr>
+              <tr{% if person.high_fit %} class="high-fit" title="High fit: supply-side vendor + BD/CXO/marketing/data-tech/transformation/presales role"{% endif %}>
                 <td>{{ person.name }}</td>
-                <td>{{ person.title|default:"—" }}</td>
-                <td>{{ person.company|default:"—" }}</td>
-                <td>{{ person.location|default:"—" }}</td>
                 <td class="links">
                   <div class="btn-row">
                     <button type="button" class="icon-btn{% if not person.has_linkedin %} is-disabled{% endif %}" data-person-id="{{ person.id }}" data-action="linkedin" {% if not person.has_linkedin %}disabled aria-label="No LinkedIn on file"{% else %}onclick="openLinkedIn(this)" aria-label="Open {{ person.name }}'s LinkedIn profile"{% endif %}>
@@ -158,6 +161,9 @@
                     </button>
                   </div>
                 </td>
+                <td>{{ person.title|default:"—" }}</td>
+                <td>{{ person.company|default:"—" }}</td>
+                <td>{{ person.location|default:"—" }}</td>
               </tr>
             {% endfor %}
           </tbody>

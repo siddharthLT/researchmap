@@ -2,6 +2,20 @@
 
 {% block title %}{{ person_list.name }} · ContactDB{% endblock %}
 
+{% block extra_style %}
+  tr.person-row.has-notes { cursor: pointer; }
+  .expand-indicator {
+    display: inline-block; width: 10px; margin-right: 4px; color: var(--muted);
+    transition: transform .15s ease; transform: rotate(0deg);
+  }
+  tr.person-row.expanded .expand-indicator { transform: rotate(90deg); }
+  tr.notes-row td {
+    background: var(--surface-2);
+    white-space: normal;
+  }
+  tr.notes-row[hidden] { display: none; }
+{% endblock %}
+
 {% block content %}
   <header class="masthead">
     <p class="eyebrow"><a href="{% url 'contactdb:home' %}">ContactDB</a> &middot; People</p>
@@ -18,21 +32,16 @@
         <thead>
           <tr>
             <th>Name</th>
+            <th>Links</th>
             <th>Title</th>
             <th>Company</th>
             <th>Phone</th>
-            <th>Notes</th>
-            <th>Links</th>
           </tr>
         </thead>
         <tbody>
           {% for person in people %}
-            <tr>
-              <td>{{ person.name }}</td>
-              <td class="wrap">{{ person.title|default:"—" }}</td>
-              <td>{{ person.display_company|default:"—" }}</td>
-              <td>{{ person.phone|default:"—" }}</td>
-              <td class="wrap">{{ person.notes|linebreaksbr|default:"—" }}</td>
+            <tr class="person-row{% if person.notes %} has-notes{% endif %}"{% if person.notes %} data-target="notes-{{ person.id }}"{% endif %}>
+              <td>{% if person.notes %}<span class="expand-indicator">&rsaquo;</span>{% endif %}{{ person.name }}</td>
               <td class="links">
                 <div class="btn-row">
                   {% if person.linkedin_url %}
@@ -45,7 +54,7 @@
                     </span>
                   {% endif %}
                   {% if person.email %}
-                    <button type="button" class="icon-btn" data-email="{{ person.email }}" onclick="copyEmail(this)" title="{{ person.email }}" aria-label="Copy {{ person.name }}'s email">
+                    <button type="button" class="icon-btn" data-email="{{ person.email }}" onclick="copyEmail(this, event)" title="{{ person.email }}" aria-label="Copy {{ person.name }}'s email">
                       <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">Copy email</span>
                     </button>
                   {% else %}
@@ -55,7 +64,15 @@
                   {% endif %}
                 </div>
               </td>
+              <td class="wrap">{{ person.title|default:"—" }}</td>
+              <td>{{ person.display_company|default:"—" }}</td>
+              <td>{{ person.phone|default:"—" }}</td>
             </tr>
+            {% if person.notes %}
+              <tr class="notes-row" id="notes-{{ person.id }}" hidden>
+                <td colspan="5" class="wrap notes-cell">{{ person.notes|linebreaksbr }}</td>
+              </tr>
+            {% endif %}
           {% endfor %}
         </tbody>
       </table>
@@ -69,6 +86,16 @@
 
 {% block extra_js %}
 <script>
+  document.querySelectorAll('tr.person-row.has-notes').forEach(function (row) {
+    row.addEventListener('click', function (e) {
+      if (e.target.closest('.icon-btn')) return;
+      var target = document.getElementById(row.getAttribute('data-target'));
+      if (!target) return;
+      target.hidden = !target.hidden;
+      row.classList.toggle('expanded', !target.hidden);
+    });
+  });
+
   function fallbackCopy(text, cb) {
     try {
       var ta = document.createElement('textarea');
@@ -86,7 +113,8 @@
     }
   }
 
-  function copyEmail(btn) {
+  function copyEmail(btn, e) {
+    if (e) e.stopPropagation();
     var email = btn.getAttribute('data-email');
     var original = btn.innerHTML;
     var labelHTML = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">';
