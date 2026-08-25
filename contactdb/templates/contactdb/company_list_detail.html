@@ -26,7 +26,6 @@
             <th>Links</th>
             <th>Location</th>
             <th>Industry</th>
-            <th>Product category</th>
             <th>Employees</th>
             <th>Annual revenue</th>
             <th>Decision makers</th>
@@ -52,7 +51,6 @@
               </td>
               <td>{{ company.city }}{% if company.city and company.state_code %}, {% endif %}{{ company.state_code }}</td>
               <td class="wrap">{{ company.industry|default:"—" }}</td>
-              <td class="wrap">{{ company.product_category|default:"—" }}</td>
               <td class="num">{{ company.employee_count|default:"—" }}</td>
               <td class="num">{% if company.annual_revenue %}${{ company.annual_revenue|floatformat:0 }}{% else %}—{% endif %}</td>
               <td class="wrap">{{ company.decision_maker_names|default:"—" }}</td>
