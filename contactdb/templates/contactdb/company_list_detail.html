@@ -50,6 +50,9 @@
                       <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 13 3M8.5 3H13v4.5M13 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/></svg>Website
                     </span>
                   {% endif %}
+                  <a class="icon-btn" href="{% url 'contactdb:company_brief' company.id %}" aria-label="Open {{ company.name }}'s company brief">
+                    <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h6L12.5 5v8.5a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z"/><path d="M9.5 2.5V5h3"/><path d="M5.5 8h5M5.5 10.5h5"/></svg>Brief
+                  </a>
                 </div>
               </td>
               <td class="wrap">{{ company.modality|default:"—" }}</td>

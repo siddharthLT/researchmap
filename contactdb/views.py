@@ -5,6 +5,8 @@ from django.db.models import Count
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
 
+from companymap.models import Company
+
 from .models import CompanyList, Person, PersonList
 
 CONNECTOR_SLUGS = {
@@ -214,3 +216,38 @@ def connection_universe(request, slug):
 def person_contact(request, person_id):
     person = get_object_or_404(Person, pk=person_id)
     return JsonResponse({"email": person.email, "linkedin_url": person.linkedin_url})
+
+
+def company_brief(request, company_id):
+    company = get_object_or_404(Company, pk=company_id)
+    company_lists = CompanyList.objects.filter(items__company=company).order_by("name")
+    people = Person.objects.filter(company=company).prefetch_related("lists").order_by("name")
+    company.has_warm_connection = any(person.prior_connections for person in people)
+
+    sections = {}
+    unlisted = []
+    for person in people:
+        lists = list(person.lists.all())
+        if not lists:
+            unlisted.append(person)
+            continue
+        for person_list in lists:
+            sections.setdefault(person_list, []).append(person)
+
+    section_list = [
+        {"list": person_list, "people": people_in_list}
+        for person_list, people_in_list in sorted(sections.items(), key=lambda kv: kv[0].name)
+    ]
+    if unlisted:
+        section_list.append({"list": None, "people": unlisted})
+
+    return render(
+        request,
+        "contactdb/company_brief.html",
+        {
+            "company": company,
+            "company_lists": company_lists,
+            "sections": section_list,
+            "total_people": people.count(),
+        },
+    )
