@@ -185,6 +185,25 @@
       border: 1px dashed var(--border); border-radius: 10px; margin-top: 18px;
     }
 
+    /* ---- row selection + CSV export ---- */
+    .export-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-top: 18px; flex-wrap: wrap;
+    }
+    .export-toolbar .select-summary {
+      font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted);
+    }
+    .btn-export {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-weight: 500;
+      background: var(--ink); color: var(--page); border: 0; border-radius: 8px;
+      padding: 9px 16px; cursor: pointer;
+    }
+    .btn-export:hover { opacity: .88; }
+    .btn-export:disabled { opacity: .4; cursor: not-allowed; }
+    th.select-col, td.select-col { width: 1%; white-space: nowrap; }
+    input.row-check, input.select-all-check { width: 15px; height: 15px; cursor: pointer; }
+
     footer {
       margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
       font-size: 12px; color: var(--muted); font-family: "IBM Plex Mono", monospace;
@@ -207,6 +226,71 @@
     </div>
     {% block content %}{% endblock %}
   </div>
+  <script>
+    function csvEscape(value) {
+      const s = String(value === null || value === undefined ? "" : value);
+      return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+
+    function downloadCsv(filename, headers, rows) {
+      const lines = [headers, ...rows].map(row => row.map(csvEscape).join(",")).join("\r\n");
+      const blob = new Blob(["\ufeff" + lines], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function initRowSelection({ checkboxSelector, selectAllSelector, exportButtonSelector, summarySelector, filename, buildRows }) {
+      const checkboxes = () => Array.from(document.querySelectorAll(checkboxSelector));
+      const selectAll = document.querySelector(selectAllSelector);
+      const exportButton = document.querySelector(exportButtonSelector);
+      const summary = document.querySelector(summarySelector);
+
+      function selected() {
+        return checkboxes().filter(cb => cb.checked);
+      }
+
+      function refresh() {
+        const n = selected().length;
+        const total = checkboxes().length;
+        if (summary) summary.textContent = n ? `${n} of ${total} selected` : `${total} rows — select some, or select all, to export`;
+        if (exportButton) exportButton.disabled = n === 0;
+        if (selectAll) selectAll.checked = total > 0 && n === total;
+      }
+
+      checkboxes().forEach(cb => cb.addEventListener("change", refresh));
+      if (selectAll) {
+        selectAll.addEventListener("change", () => {
+          checkboxes().forEach(cb => { cb.checked = selectAll.checked; });
+          refresh();
+        });
+      }
+      if (exportButton) {
+        exportButton.addEventListener("click", async () => {
+          const rows = selected().map(cb => JSON.parse(cb.closest("tr").dataset.row));
+          if (!rows.length) return;
+          exportButton.disabled = true;
+          const originalText = exportButton.textContent;
+          exportButton.textContent = "Exporting…";
+          try {
+            const finalRows = buildRows ? await buildRows(rows) : rows;
+            const headers = Object.keys(finalRows[0]);
+            downloadCsv(filename(), headers, finalRows.map(r => headers.map(h => r[h])));
+          } finally {
+            exportButton.textContent = originalText;
+            refresh();
+          }
+        });
+      }
+      refresh();
+      return { refresh, selected };
+    }
+  </script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>
