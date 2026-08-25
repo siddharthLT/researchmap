@@ -9,6 +9,15 @@ from contactdb.models import Person, PersonList, PersonListItem
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif")
 
+# Apollo sometimes leaves a generic platform URL in the "Website" column
+# instead of the contact's actual employer site (e.g. when it couldn't find
+# one). Matching on these would silently attach the person to whichever
+# Company record happens to carry the same bad domain.
+GENERIC_DOMAINS = {
+    "linkedin.com", "facebook.com", "twitter.com", "x.com", "instagram.com",
+    "youtube.com", "google.com", "apollo.io", "crunchbase.com", "bit.ly",
+}
+
 PHONE_FIELDS = (
     "Work Direct Phone",
     "Mobile Phone",
@@ -50,7 +59,9 @@ class Command(BaseCommand):
         domain_to_company = {}
         name_to_company = {}
         for company in Company.objects.exclude(domain="").only("id", "name", "domain"):
-            domain_to_company[company.domain.lower()] = company
+            domain = company.domain.lower()
+            if domain not in GENERIC_DOMAINS:
+                domain_to_company[domain] = company
         for company in Company.objects.only("id", "name"):
             name_to_company.setdefault(company.name.strip().lower(), company)
 
@@ -123,7 +134,9 @@ class Command(BaseCommand):
         if website:
             domain = urlparse(website if "://" in website else f"https://{website}").netloc
             domain = domain.removeprefix("www.").lower()
-            if domain in domain_to_company:
+            if domain in GENERIC_DOMAINS:
+                domain = None
+            if domain and domain in domain_to_company:
                 return domain_to_company[domain]
 
         company_name = self._company_name(row)
