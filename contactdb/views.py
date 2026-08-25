@@ -1,16 +1,39 @@
 from django.db.models import Count
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, render
 
-from .models import CompanyList, PersonList
+from .models import CompanyList, Person, PersonList
+
+CONNECTOR_SLUGS = {
+    "vedant": "Vedant",
+    "pk": "PK",
+    "naren": "Naren",
+    "mukesh": "Mukesh",
+    "lavanya": "Lavanya",
+}
+
+SEGMENT_COLOR = {
+    Person.Segment.CDMO: "--s1",
+    Person.Segment.CRO: "--s2",
+    Person.Segment.REAGENTS: "--s3",
+    Person.Segment.EQUIPMENT: "--s4",
+    Person.Segment.PHARMA: "--s5",
+    Person.Segment.CONSULTING: "--s6",
+    Person.Segment.NON_PHARMA: "--s7",
+}
 
 
 def home(request):
     company_lists = CompanyList.objects.annotate(item_count=Count("items"))
     person_lists = PersonList.objects.annotate(item_count=Count("items"))
+    connections = [
+        {"slug": slug, "name": name, "count": Person.objects.filter(prior_connections__contains=[name]).count()}
+        for slug, name in CONNECTOR_SLUGS.items()
+    ]
     return render(
         request,
         "contactdb/home.html",
-        {"company_lists": company_lists, "person_lists": person_lists},
+        {"company_lists": company_lists, "person_lists": person_lists, "connections": connections},
     )
 
 
@@ -36,3 +59,69 @@ def person_list_detail(request, slug):
         "contactdb/person_list_detail.html",
         {"person_list": person_list, "people": people},
     )
+
+
+def connection_universe(request, slug):
+    connector = CONNECTOR_SLUGS.get(slug)
+    if not connector:
+        raise Http404("Unknown connections page.")
+
+    people = Person.objects.filter(prior_connections__contains=[connector]).select_related("company").order_by("name")
+    total = people.count()
+
+    rows = []
+    for person in people:
+        raw = person.raw_data or {}
+        city = raw.get("City") or (person.company.city if person.company else "")
+        state = raw.get("State") or (person.company.state_name if person.company else "")
+        location = ", ".join(part for part in (city, state) if part)
+        rows.append(
+            {
+                "id": person.id,
+                "name": person.name,
+                "title": person.title,
+                "company": person.display_company,
+                "location": location,
+                "segment": person.segment,
+                "has_email": bool(person.email),
+                "has_linkedin": bool(person.linkedin_url),
+            }
+        )
+
+    segment_groups = {}
+    for row in rows:
+        segment_groups.setdefault(row["segment"], []).append(row)
+
+    segment_labels = dict(Person.Segment.choices)
+    segments = []
+    for value, group in segment_groups.items():
+        label = segment_labels.get(value, "Unclassified")
+        color = SEGMENT_COLOR.get(value, "--muted")
+        count = len(group)
+        segments.append(
+            {
+                "value": value or "unclassified",
+                "label": label,
+                "color": color,
+                "count": count,
+                "pct": round(100 * count / total) if total else 0,
+                "people": sorted(group, key=lambda r: r["name"]),
+            }
+        )
+    segments.sort(key=lambda s: -s["count"])
+
+    return render(
+        request,
+        "contactdb/connections/report.html",
+        {
+            "connector": connector,
+            "slug": slug,
+            "total": total,
+            "segments": segments,
+        },
+    )
+
+
+def person_contact(request, person_id):
+    person = get_object_or_404(Person, pk=person_id)
+    return JsonResponse({"email": person.email, "linkedin_url": person.linkedin_url})

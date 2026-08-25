@@ -63,5 +63,23 @@
     {% endif %}
   </section>
 
+  <section class="cat-section" style="--c: var(--s6)">
+    <div class="cat-title">
+      <span class="rule"></span>
+      <div>
+        <h2>Connections Universe<span class="cat-count">{{ connections|length }}</span></h2>
+        <p class="cat-desc">Warm-connection reports, segmented by where each contact's employer sits in the pharma value chain (CDMO, CRO, reagents &amp; lab tools, equipment, pharma/biotech, consulting, or outside the industry). Email and LinkedIn are fetched live from the database on click, never rendered into the page.</p>
+      </div>
+    </div>
+    <div class="list-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); display: grid;">
+      {% for connection in connections %}
+        <a class="list-card" style="--c: var(--s6)" href="{% url 'contactdb:connection_universe' connection.slug %}">
+          <div><div class="name">{{ connection.name }}</div><p class="desc">Warm connections network</p></div>
+          <span class="count">{{ connection.count }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
   <footer>ContactDB &middot; company map database + warm-connection imports</footer>
 {% endblock %}
