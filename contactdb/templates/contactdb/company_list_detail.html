@@ -25,6 +25,8 @@
             <th class="select-col"><input type="checkbox" class="select-all-check" id="select-all"></th>
             <th>Name</th>
             <th>Links</th>
+            <th>Modality</th>
+            <th>Segment</th>
             <th>Location</th>
             <th>Industry</th>
             <th>Employees</th>
@@ -50,6 +52,8 @@
                   {% endif %}
                 </div>
               </td>
+              <td class="wrap">{{ company.modality|default:"—" }}</td>
+              <td>{{ company.segment|default:"—" }}</td>
               <td>{{ company.city }}{% if company.city and company.state_code %}, {% endif %}{{ company.state_code }}</td>
               <td class="wrap">{{ company.industry|default:"—" }}</td>
               <td class="num">{{ company.employee_count|default:"—" }}</td>

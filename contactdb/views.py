@@ -96,6 +96,8 @@ def company_list_detail(request, slug):
             {
                 "Name": company.name,
                 "Website": company.url,
+                "Modality": company.modality,
+                "Segment": company.segment,
                 "Location": ", ".join(part for part in (company.city, company.state_code) if part),
                 "Industry": company.industry,
                 "Product Category": company.product_category,
