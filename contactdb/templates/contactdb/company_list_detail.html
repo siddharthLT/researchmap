@@ -14,6 +14,39 @@
   </header>
 
   {% if companies %}
+    <div class="filter-bar">
+      {% if modality_options %}
+        <div class="filter-group">
+          <span class="filter-label">Modality</span>
+          <div class="filter-chips filter-modality">
+            {% for value, count in modality_options %}
+              <span class="filter-chip" data-value="{{ value }}">{{ value }} <span class="n">{{ count }}</span></span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+      {% if segment_options %}
+        <div class="filter-group">
+          <span class="filter-label">Segment</span>
+          <div class="filter-chips filter-segment">
+            {% for value, count in segment_options %}
+              <span class="filter-chip" data-value="{{ value }}">{{ value }} <span class="n">{{ count }}</span></span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+      {% if warm_count %}
+        <div class="filter-group">
+          <span class="filter-label">Warm connection</span>
+          <div class="filter-chips filter-warm">
+            <span class="filter-chip" data-value="yes">🔥 Has warm connection <span class="n">{{ warm_count }}</span></span>
+          </div>
+        </div>
+      {% endif %}
+      <button type="button" class="filter-clear" id="filter-clear">Clear filters</button>
+    </div>
+    <div class="filter-count" id="filter-count"></div>
+
     <div class="export-toolbar">
       <span class="select-summary" id="select-summary"></span>
       <button type="button" class="btn-export" id="export-btn">Export CSV</button>
@@ -36,7 +69,7 @@
         </thead>
         <tbody>
           {% for company in companies %}
-            <tr data-row="{{ company.export_json }}">
+            <tr data-row="{{ company.export_json }}" data-modality="{{ company.data_modality }}" data-segment="{{ company.data_segment }}" data-warm="{{ company.data_warm }}">
               <td class="select-col"><input type="checkbox" class="row-check"></td>
               <td>{% if company.has_warm_connection %}<span class="warm-flame" aria-hidden="true" title="Warm connection">🔥</span>{% endif %}{{ company.name }}</td>
               <td class="links">
@@ -76,12 +109,24 @@
 
 {% block extra_js %}
 <script>
-  initRowSelection({
+  const selection = initRowSelection({
     checkboxSelector: ".row-check",
     selectAllSelector: "#select-all",
     exportButtonSelector: "#export-btn",
     summarySelector: "#select-summary",
     filename: () => "{{ company_list.slug }}.csv",
+  });
+
+  initChipFilters({
+    rowSelector: "tbody tr[data-row]",
+    countSelector: "#filter-count",
+    clearSelector: "#filter-clear",
+    onChange: () => selection.refresh(),
+    groups: [
+      { chipSelector: ".filter-modality .filter-chip", attr: "modality" },
+      { chipSelector: ".filter-segment .filter-chip", attr: "segment" },
+      { chipSelector: ".filter-warm .filter-chip", attr: "warm" },
+    ],
   });
 </script>
 {% endblock %}

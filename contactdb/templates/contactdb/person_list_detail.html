@@ -27,6 +27,37 @@
   </header>
 
   {% if people %}
+    <div class="filter-bar">
+      {% if modality_options %}
+        <div class="filter-group">
+          <span class="filter-label">Modality</span>
+          <div class="filter-chips filter-modality">
+            {% for value, count in modality_options %}
+              <span class="filter-chip" data-value="{{ value }}">{{ value }} <span class="n">{{ count }}</span></span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+      {% if segment_options %}
+        <div class="filter-group">
+          <span class="filter-label">Segment</span>
+          <div class="filter-chips filter-segment">
+            {% for value, count in segment_options %}
+              <span class="filter-chip" data-value="{{ value }}">{{ value }} <span class="n">{{ count }}</span></span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+      <div class="filter-group">
+        <span class="filter-label">Warm connection</span>
+        <div class="filter-chips filter-warm">
+          <span class="filter-chip" data-value="yes">🔥 Has warm connection</span>
+        </div>
+      </div>
+      <button type="button" class="filter-clear" id="filter-clear">Clear filters</button>
+    </div>
+    <div class="filter-count" id="filter-count"></div>
+
     <div class="export-toolbar">
       <span class="select-summary" id="select-summary"></span>
       <button type="button" class="btn-export" id="export-btn">Export CSV</button>
@@ -45,7 +76,7 @@
         </thead>
         <tbody>
           {% for person in people %}
-            <tr class="person-row{% if person.notes %} has-notes{% endif %}"{% if person.notes %} data-target="notes-{{ person.id }}"{% endif %} data-row="{{ person.export_json }}">
+            <tr class="person-row{% if person.notes %} has-notes{% endif %}"{% if person.notes %} data-target="notes-{{ person.id }}"{% endif %} data-row="{{ person.export_json }}" data-modality="{{ person.data_modality }}" data-segment="{{ person.data_segment }}" data-warm="{{ person.data_warm }}">
               <td class="select-col"><input type="checkbox" class="row-check"></td>
               <td>{% if person.notes %}<span class="expand-indicator">&rsaquo;</span>{% endif %}{{ person.name }}</td>
               <td class="links">
@@ -102,12 +133,33 @@
     });
   });
 
-  initRowSelection({
+  const selection = initRowSelection({
     checkboxSelector: ".row-check",
     selectAllSelector: "#select-all",
     exportButtonSelector: "#export-btn",
     summarySelector: "#select-summary",
     filename: () => "{{ person_list.slug }}.csv",
+  });
+
+  initChipFilters({
+    rowSelector: "tbody tr.person-row",
+    countSelector: "#filter-count",
+    clearSelector: "#filter-clear",
+    onChange: () => {
+      document.querySelectorAll('tr.person-row').forEach(function (row) {
+        if (row.style.display === 'none' && row.dataset.target) {
+          var notesRow = document.getElementById(row.dataset.target);
+          if (notesRow) { notesRow.hidden = true; }
+          row.classList.remove('expanded');
+        }
+      });
+      selection.refresh();
+    },
+    groups: [
+      { chipSelector: ".filter-modality .filter-chip", attr: "modality" },
+      { chipSelector: ".filter-segment .filter-chip", attr: "segment" },
+      { chipSelector: ".filter-warm .filter-chip", attr: "warm" },
+    ],
   });
 
   function fallbackCopy(text, cb) {

@@ -1,5 +1,6 @@
 import json
 import re
+from collections import Counter
 
 from django.db.models import Count
 from django.http import Http404, JsonResponse
@@ -92,8 +93,17 @@ def company_list_detail(request, slug):
         .values_list("company_id", flat=True)
         .distinct()
     )
+    modality_counts = Counter()
+    segment_counts = Counter()
     for company in companies:
         company.has_warm_connection = company.id in warm_company_ids
+        company.modality_tags = [t.strip() for t in company.modality.split(",") if t.strip()]
+        company.data_modality = "|".join(company.modality_tags)
+        company.data_segment = company.segment
+        company.data_warm = "yes" if company.has_warm_connection else "no"
+        modality_counts.update(company.modality_tags)
+        if company.segment:
+            segment_counts[company.segment] += 1
         company.export_json = json.dumps(
             {
                 "Name": company.name,
@@ -109,32 +119,63 @@ def company_list_detail(request, slug):
                 "Warm Connection": "Yes" if company.has_warm_connection else "",
             }
         )
+    modality_options = sorted(modality_counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    segment_options = sorted(segment_counts.items(), key=lambda kv: (-kv[1], kv[0]))
     return render(
         request,
         "contactdb/company_list_detail.html",
-        {"company_list": company_list, "companies": companies},
+        {
+            "company_list": company_list,
+            "companies": companies,
+            "modality_options": modality_options,
+            "segment_options": segment_options,
+            "warm_count": len(warm_company_ids),
+        },
     )
 
 
 def person_list_detail(request, slug):
     person_list = get_object_or_404(PersonList, slug=slug)
     people = person_list.people.all().select_related("company").order_by("name")
+    segment_labels = dict(Person.Segment.choices)
+    modality_counts = Counter()
+    segment_counts = Counter()
     for person in people:
+        modality = person.company.modality if person.company else ""
+        person.modality_tags = [t.strip() for t in modality.split(",") if t.strip()]
+        person.data_modality = "|".join(person.modality_tags)
+        person.segment_label = segment_labels.get(person.segment, "")
+        person.data_segment = person.segment_label
+        person.has_warm_connection = bool(person.prior_connections)
+        person.data_warm = "yes" if person.has_warm_connection else "no"
+        modality_counts.update(person.modality_tags)
+        if person.segment_label:
+            segment_counts[person.segment_label] += 1
         person.export_json = json.dumps(
             {
                 "Name": person.name,
                 "Title": person.title,
                 "Company": person.display_company,
+                "Modality": modality,
+                "Segment": person.segment_label,
+                "Warm Connection": "Yes" if person.has_warm_connection else "",
                 "Phone": person.phone,
                 "Email": person.email,
                 "LinkedIn": person.linkedin_url,
                 "Notes": person.notes,
             }
         )
+    modality_options = sorted(modality_counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    segment_options = sorted(segment_counts.items(), key=lambda kv: (-kv[1], kv[0]))
     return render(
         request,
         "contactdb/person_list_detail.html",
-        {"person_list": person_list, "people": people},
+        {
+            "person_list": person_list,
+            "people": people,
+            "modality_options": modality_options,
+            "segment_options": segment_options,
+        },
     )
 
 

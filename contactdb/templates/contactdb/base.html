@@ -184,6 +184,35 @@
     .icon-btn.copied { border-color: #0ca30c; color: #0ca30c; }
     .icon-btn.copy-failed { border-color: var(--s2); color: var(--s2); }
 
+    /* ---- filters ---- */
+    .filter-bar {
+      display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start;
+      margin-top: 18px; padding: 14px 16px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 10px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-group .filter-label {
+      font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; max-width: 520px; }
+    .filter-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+      color: var(--ink-2); font-size: 12px; padding: 5px 10px 5px 8px; cursor: pointer;
+      user-select: none;
+    }
+    .filter-chip .n { font-family: "IBM Plex Mono", monospace; color: var(--muted); font-size: 11px; }
+    .filter-chip.active { background: var(--ink); color: var(--page); border-color: var(--ink); }
+    .filter-chip.active .n { color: var(--page); opacity: .7; }
+    .filter-clear {
+      align-self: flex-end; font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
+      color: var(--muted); background: none; border: 0; cursor: pointer; text-decoration: underline;
+      padding: 0;
+    }
+    .filter-clear:hover { color: var(--ink); }
+    .filter-count { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); margin-top: 10px; }
+
     .empty-state {
       color: var(--muted); font-size: 14px; padding: 20px;
       border: 1px dashed var(--border); border-radius: 10px; margin-top: 18px;
@@ -250,7 +279,10 @@
     }
 
     function initRowSelection({ checkboxSelector, selectAllSelector, exportButtonSelector, summarySelector, filename, buildRows }) {
-      const checkboxes = () => Array.from(document.querySelectorAll(checkboxSelector));
+      const checkboxes = () => Array.from(document.querySelectorAll(checkboxSelector)).filter(cb => {
+        const row = cb.closest("tr");
+        return !row || row.style.display !== "none";
+      });
       const selectAll = document.querySelector(selectAllSelector);
       const exportButton = document.querySelector(exportButtonSelector);
       const summary = document.querySelector(summarySelector);
@@ -293,6 +325,59 @@
       }
       refresh();
       return { refresh, selected };
+    }
+
+    function initChipFilters({ rowSelector, groups, countSelector, clearSelector, onChange }) {
+      const rows = () => Array.from(document.querySelectorAll(rowSelector));
+      const state = {};
+      groups.forEach(g => { state[g.attr] = new Set(); });
+
+      function apply() {
+        let visible = 0;
+        rows().forEach(row => {
+          const ok = groups.every(g => {
+            const active = state[g.attr];
+            if (active.size === 0) return true;
+            const values = (row.dataset[g.attr] || "").split("|").filter(Boolean);
+            return values.some(v => active.has(v));
+          });
+          row.style.display = ok ? "" : "none";
+          if (ok) visible++;
+        });
+        if (countSelector) {
+          const el = document.querySelector(countSelector);
+          if (el) el.textContent = `${visible} of ${rows().length} shown`;
+        }
+        if (onChange) onChange();
+      }
+
+      groups.forEach(g => {
+        document.querySelectorAll(g.chipSelector).forEach(chip => {
+          chip.addEventListener("click", () => {
+            const val = chip.dataset.value;
+            const active = state[g.attr];
+            if (active.has(val)) { active.delete(val); chip.classList.remove("active"); }
+            else { active.add(val); chip.classList.add("active"); }
+            apply();
+          });
+        });
+      });
+
+      if (clearSelector) {
+        const clearBtn = document.querySelector(clearSelector);
+        if (clearBtn) {
+          clearBtn.addEventListener("click", () => {
+            groups.forEach(g => {
+              state[g.attr].clear();
+              document.querySelectorAll(g.chipSelector).forEach(chip => chip.classList.remove("active"));
+            });
+            apply();
+          });
+        }
+      }
+
+      apply();
+      return { apply };
     }
   </script>
   {% block extra_js %}{% endblock %}
