@@ -101,6 +101,21 @@ class Person(models.Model):
         help_text="Free-text company name, used when there's no matching Company record.",
     )
     segment = models.CharField(max_length=16, choices=Segment.choices, blank=True)
+
+    class StakeholderRole(models.TextChoices):
+        DECISION_MAKER = "decision_maker", "Decision Maker"
+        CHAMPION = "champion", "Champion"
+        INFLUENCER = "influencer", "Influencer"
+        END_USER = "end_user", "End User"
+
+    stakeholder_role = models.CharField(
+        max_length=16,
+        choices=StakeholderRole.choices,
+        blank=True,
+        help_text="BD-adoption persona inferred from title: CxO/Chairman/Founder = decision maker, "
+        "VP/Director in BD-Marketing-Data = champion, associate director/senior manager = influencer, "
+        "manager/associate = end user.",
+    )
     prior_connections = models.JSONField(
         default=list,
         blank=True,

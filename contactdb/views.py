@@ -138,19 +138,25 @@ def person_list_detail(request, slug):
     person_list = get_object_or_404(PersonList, slug=slug)
     people = person_list.people.all().select_related("company").order_by("name")
     segment_labels = dict(Person.Segment.choices)
+    role_labels = dict(Person.StakeholderRole.choices)
     modality_counts = Counter()
     segment_counts = Counter()
+    role_counts = Counter()
     for person in people:
         modality = person.company.modality if person.company else ""
         person.modality_tags = [t.strip() for t in modality.split(",") if t.strip()]
         person.data_modality = "|".join(person.modality_tags)
         person.segment_label = segment_labels.get(person.segment, "")
         person.data_segment = person.segment_label
+        person.role_label = role_labels.get(person.stakeholder_role, "")
+        person.data_role = person.role_label
         person.has_warm_connection = bool(person.prior_connections)
         person.data_warm = "yes" if person.has_warm_connection else "no"
         modality_counts.update(person.modality_tags)
         if person.segment_label:
             segment_counts[person.segment_label] += 1
+        if person.role_label:
+            role_counts[person.role_label] += 1
         person.export_json = json.dumps(
             {
                 "Name": person.name,
@@ -158,6 +164,7 @@ def person_list_detail(request, slug):
                 "Company": person.display_company,
                 "Modality": modality,
                 "Segment": person.segment_label,
+                "Stakeholder Role": person.role_label,
                 "Warm Connection": "Yes" if person.has_warm_connection else "",
                 "Phone": person.phone,
                 "Email": person.email,
@@ -167,6 +174,7 @@ def person_list_detail(request, slug):
         )
     modality_options = sorted(modality_counts.items(), key=lambda kv: (-kv[1], kv[0]))
     segment_options = sorted(segment_counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    role_options = sorted(role_counts.items(), key=lambda kv: (-kv[1], kv[0]))
     return render(
         request,
         "contactdb/person_list_detail.html",
@@ -175,6 +183,7 @@ def person_list_detail(request, slug):
             "people": people,
             "modality_options": modality_options,
             "segment_options": segment_options,
+            "role_options": role_options,
         },
     )
 

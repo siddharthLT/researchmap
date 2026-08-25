@@ -133,6 +133,7 @@
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Role</th>
                 <th>Links</th>
                 <th>Title</th>
                 <th>Phone</th>
@@ -142,6 +143,7 @@
               {% for person in section.people %}
                 <tr>
                   <td>{{ person.name }}</td>
+                  <td>{% if person.stakeholder_role %}<span class="role-badge role-{{ person.stakeholder_role }}">{{ person.get_stakeholder_role_display }}</span>{% else %}—{% endif %}</td>
                   <td class="links">
                     <div class="btn-row">
                       {% if person.linkedin_url %}
