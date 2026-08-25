@@ -48,6 +48,16 @@
           </div>
         </div>
       {% endif %}
+      {% if role_options %}
+        <div class="filter-group">
+          <span class="filter-label">Stakeholder role</span>
+          <div class="filter-chips filter-role">
+            {% for value, count in role_options %}
+              <span class="filter-chip" data-value="{{ value }}">{{ value }} <span class="n">{{ count }}</span></span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
       <div class="filter-group">
         <span class="filter-label">Warm connection</span>
         <div class="filter-chips filter-warm">
@@ -76,9 +86,9 @@
         </thead>
         <tbody>
           {% for person in people %}
-            <tr class="person-row{% if person.notes %} has-notes{% endif %}"{% if person.notes %} data-target="notes-{{ person.id }}"{% endif %} data-row="{{ person.export_json }}" data-modality="{{ person.data_modality }}" data-segment="{{ person.data_segment }}" data-warm="{{ person.data_warm }}">
+            <tr class="person-row{% if person.notes %} has-notes{% endif %}"{% if person.notes %} data-target="notes-{{ person.id }}"{% endif %} data-row="{{ person.export_json }}" data-modality="{{ person.data_modality }}" data-segment="{{ person.data_segment }}" data-warm="{{ person.data_warm }}" data-role="{{ person.data_role }}">
               <td class="select-col"><input type="checkbox" class="row-check"></td>
-              <td>{% if person.notes %}<span class="expand-indicator">&rsaquo;</span>{% endif %}{{ person.name }}</td>
+              <td>{% if person.notes %}<span class="expand-indicator">&rsaquo;</span>{% endif %}{{ person.name }}{% if person.stakeholder_role %} <span class="role-badge role-{{ person.stakeholder_role }}">{{ person.role_label }}</span>{% endif %}</td>
               <td class="links">
                 <div class="btn-row">
                   {% if person.linkedin_url %}
@@ -158,6 +168,7 @@
     groups: [
       { chipSelector: ".filter-modality .filter-chip", attr: "modality" },
       { chipSelector: ".filter-segment .filter-chip", attr: "segment" },
+      { chipSelector: ".filter-role .filter-chip", attr: "role" },
       { chipSelector: ".filter-warm .filter-chip", attr: "warm" },
     ],
   });
