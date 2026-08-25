@@ -1,3 +1,4 @@
+import json
 import re
 
 from django.db.models import Count
@@ -23,6 +24,18 @@ SEGMENT_COLOR = {
     Person.Segment.CONSULTING: "--s6",
     Person.Segment.NON_PHARMA: "--s7",
 }
+
+# Supply-side vendors first, pharma/biotech sponsors next, consulting after
+# that, non-pharma last, unclassified at the very end.
+SEGMENT_ORDER = [
+    Person.Segment.CDMO,
+    Person.Segment.CRO,
+    Person.Segment.REAGENTS,
+    Person.Segment.EQUIPMENT,
+    Person.Segment.PHARMA,
+    Person.Segment.CONSULTING,
+    Person.Segment.NON_PHARMA,
+]
 
 # "High fit" = works at a supply-side vendor (CDMO/CRO/reagents/equipment) AND
 # holds a role that's likely to influence or approve a vendor relationship
@@ -71,6 +84,19 @@ def company_list_detail(request, slug):
         .prefetch_related("decision_makers")
         .order_by("name")
     )
+    for company in companies:
+        company.export_json = json.dumps(
+            {
+                "Name": company.name,
+                "Website": company.url,
+                "Location": ", ".join(part for part in (company.city, company.state_code) if part),
+                "Industry": company.industry,
+                "Product Category": company.product_category,
+                "Employees": company.employee_count,
+                "Annual Revenue": company.annual_revenue,
+                "Decision Makers": company.decision_maker_names,
+            }
+        )
     return render(
         request,
         "contactdb/company_list_detail.html",
@@ -81,6 +107,18 @@ def company_list_detail(request, slug):
 def person_list_detail(request, slug):
     person_list = get_object_or_404(PersonList, slug=slug)
     people = person_list.people.all().select_related("company").order_by("name")
+    for person in people:
+        person.export_json = json.dumps(
+            {
+                "Name": person.name,
+                "Title": person.title,
+                "Company": person.display_company,
+                "Phone": person.phone,
+                "Email": person.email,
+                "LinkedIn": person.linkedin_url,
+                "Notes": person.notes,
+            }
+        )
     return render(
         request,
         "contactdb/person_list_detail.html",
@@ -95,6 +133,7 @@ def connection_universe(request, slug):
 
     people = Person.objects.filter(prior_connections__contains=[connector]).select_related("company").order_by("name")
     total = people.count()
+    segment_labels = dict(Person.Segment.choices)
 
     rows = []
     for person in people:
@@ -113,6 +152,16 @@ def connection_universe(request, slug):
                 "has_email": bool(person.email),
                 "has_linkedin": bool(person.linkedin_url),
                 "high_fit": _is_high_fit(person.segment, person.title),
+                "export_json": json.dumps(
+                    {
+                        "Name": person.name,
+                        "Title": person.title,
+                        "Company": person.display_company,
+                        "Location": location,
+                        "Segment": segment_labels.get(person.segment, "Unclassified"),
+                        "High Fit": "Yes" if _is_high_fit(person.segment, person.title) else "",
+                    }
+                ),
             }
         )
 
@@ -120,7 +169,6 @@ def connection_universe(request, slug):
     for row in rows:
         segment_groups.setdefault(row["segment"], []).append(row)
 
-    segment_labels = dict(Person.Segment.choices)
     segments = []
     for value, group in segment_groups.items():
         label = segment_labels.get(value, "Unclassified")
@@ -136,7 +184,8 @@ def connection_universe(request, slug):
                 "people": sorted(group, key=lambda r: r["name"]),
             }
         )
-    segments.sort(key=lambda s: -s["count"])
+    order_index = {value: i for i, value in enumerate(SEGMENT_ORDER)}
+    segments.sort(key=lambda s: order_index.get(s["value"], len(SEGMENT_ORDER)))
     high_fit_total = sum(1 for row in rows if row["high_fit"])
 
     return render(

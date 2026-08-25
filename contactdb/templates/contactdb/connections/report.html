@@ -83,6 +83,25 @@
   tr.high-fit:hover td { background: color-mix(in srgb, var(--s3) 26%, var(--surface)); }
   .legend { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin: 12px 0 0; }
   .legend .swatch { width: 12px; height: 12px; border-radius: 3px; background: color-mix(in srgb, var(--s3) 40%, var(--surface)); border: 1px solid var(--border); }
+  .export-toolbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-top: 22px; padding: 10px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    flex-wrap: wrap;
+  }
+  .export-toolbar .select-summary { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted); }
+  .btn-export {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-weight: 500;
+    background: var(--ink); color: var(--page); border: 0; border-radius: 8px;
+    padding: 9px 16px; cursor: pointer;
+  }
+  .btn-export:hover { opacity: .88; }
+  .btn-export:disabled { opacity: .4; cursor: not-allowed; }
+  th.select-col, td.select-col { width: 1%; white-space: nowrap; }
+  input.row-check, input.select-all-check { width: 15px; height: 15px; cursor: pointer; }
+  .table-select-all { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; text-transform: none; letter-spacing: 0; }
   td.links { white-space: nowrap; }
   .btn-row { display: flex; gap: 6px; }
   .icon-btn { display: inline-flex; align-items: center; gap: 5px; font-family: "IBM Plex Mono", monospace; font-size: 11px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink-2); padding: 4px 8px; cursor: pointer; text-decoration: none; line-height: 1; white-space: nowrap; }
@@ -111,6 +130,12 @@
     </div>
     <div class="legend"><span class="swatch"></span>High fit &mdash; works at a CDMO/CRO/reagents/equipment company in a BD, CXO, marketing, data/tech, transformation, or presales role</div>
   </header>
+
+  <div class="export-toolbar">
+    <span class="table-select-all"><input type="checkbox" class="select-all-check" id="select-all-global"> select all ({{ total }})</span>
+    <span class="select-summary" id="select-summary"></span>
+    <button type="button" class="btn-export" id="export-btn">Export CSV</button>
+  </div>
 
   <section class="stats">
     <div class="stat"><div class="stat-value">{{ total }}</div><div class="stat-label">Warm connections analyzed</div></div>
@@ -141,15 +166,16 @@
       <div class="cat-title">
         <span class="rule"></span>
         <div>
-          <h2>{{ segment.label }}<span class="cat-count">{{ segment.count }}</span></h2>
+          <h2>{{ segment.label }}<span class="cat-count">{{ segment.count }}</span><span class="table-select-all"><input type="checkbox" class="select-all-check" data-scope="cat-{{ segment.value }}"> select all in section</span></h2>
         </div>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Links</th><th>Title</th><th>Company</th><th>Location</th></tr></thead>
+          <thead><tr><th class="select-col"></th><th>Name</th><th>Links</th><th>Title</th><th>Company</th><th>Location</th></tr></thead>
           <tbody>
             {% for person in segment.people %}
-              <tr{% if person.high_fit %} class="high-fit" title="High fit: supply-side vendor + BD/CXO/marketing/data-tech/transformation/presales role"{% endif %}>
+              <tr{% if person.high_fit %} class="high-fit" title="High fit: supply-side vendor + BD/CXO/marketing/data-tech/transformation/presales role"{% endif %} data-row="{{ person.export_json }}">
+                <td class="select-col"><input type="checkbox" class="row-check" data-scope="cat-{{ segment.value }}"></td>
                 <td>{{ person.name }}</td>
                 <td class="links">
                   <div class="btn-row">
@@ -251,6 +277,89 @@
       }
     }).catch(function () { settle(false); });
   }
+
+  function csvEscape(value) {
+    var s = String(value === null || value === undefined ? "" : value);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+
+  function downloadCsv(filename, headers, rows) {
+    var lines = [headers].concat(rows).map(function (row) {
+      return row.map(csvEscape).join(",");
+    }).join("\r\n");
+    var blob = new Blob(["﻿" + lines], { type: "text/csv;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  (function initSelection() {
+    var rowChecks = function () { return Array.from(document.querySelectorAll(".row-check")); };
+    var globalSelectAll = document.getElementById("select-all-global");
+    var sectionSelectAlls = Array.from(document.querySelectorAll(".select-all-check[data-scope]"));
+    var exportButton = document.getElementById("export-btn");
+    var summary = document.getElementById("select-summary");
+
+    function selected() { return rowChecks().filter(function (cb) { return cb.checked; }); }
+
+    function refresh() {
+      var all = rowChecks();
+      var n = selected().length;
+      summary.textContent = n ? (n + " of " + all.length + " selected") : (all.length + " contacts — select some, or select all, to export");
+      exportButton.disabled = n === 0;
+      if (globalSelectAll) globalSelectAll.checked = all.length > 0 && n === all.length;
+      sectionSelectAlls.forEach(function (sa) {
+        var scoped = all.filter(function (cb) { return cb.getAttribute("data-scope") === sa.getAttribute("data-scope"); });
+        sa.checked = scoped.length > 0 && scoped.every(function (cb) { return cb.checked; });
+      });
+    }
+
+    rowChecks().forEach(function (cb) { cb.addEventListener("change", refresh); });
+    if (globalSelectAll) {
+      globalSelectAll.addEventListener("change", function () {
+        rowChecks().forEach(function (cb) { cb.checked = globalSelectAll.checked; });
+        refresh();
+      });
+    }
+    sectionSelectAlls.forEach(function (sa) {
+      sa.addEventListener("change", function () {
+        rowChecks().filter(function (cb) { return cb.getAttribute("data-scope") === sa.getAttribute("data-scope"); })
+          .forEach(function (cb) { cb.checked = sa.checked; });
+        refresh();
+      });
+    });
+
+    exportButton.addEventListener("click", function () {
+      var rows = selected().map(function (cb) { return JSON.parse(cb.closest("tr").dataset.row); });
+      if (!rows.length) return;
+      exportButton.disabled = true;
+      var original = exportButton.textContent;
+      exportButton.textContent = "Exporting…";
+      var ids = selected().map(function (cb) { return cb.closest("tr").querySelector("[data-person-id]").getAttribute("data-person-id"); });
+      Promise.all(ids.map(function (id) { return fetchContact(id).catch(function () { return { email: "", linkedin_url: "" }; }); }))
+        .then(function (contacts) {
+          var finalRows = rows.map(function (row, i) {
+            var merged = Object.assign({}, row);
+            merged["Email"] = contacts[i].email || "";
+            merged["LinkedIn"] = contacts[i].linkedin_url || "";
+            return merged;
+          });
+          var headers = Object.keys(finalRows[0]);
+          downloadCsv("{{ slug }}-connections.csv", headers, finalRows.map(function (r) { return headers.map(function (h) { return r[h]; }); }));
+        })
+        .finally(function () {
+          exportButton.textContent = original;
+          refresh();
+        });
+    });
+
+    refresh();
+  })();
 </script>
 </body>
 </html>

@@ -27,10 +27,15 @@
   </header>
 
   {% if people %}
+    <div class="export-toolbar">
+      <span class="select-summary" id="select-summary"></span>
+      <button type="button" class="btn-export" id="export-btn">Export CSV</button>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
+            <th class="select-col"><input type="checkbox" class="select-all-check" id="select-all"></th>
             <th>Name</th>
             <th>Links</th>
             <th>Title</th>
@@ -40,7 +45,8 @@
         </thead>
         <tbody>
           {% for person in people %}
-            <tr class="person-row{% if person.notes %} has-notes{% endif %}"{% if person.notes %} data-target="notes-{{ person.id }}"{% endif %}>
+            <tr class="person-row{% if person.notes %} has-notes{% endif %}"{% if person.notes %} data-target="notes-{{ person.id }}"{% endif %} data-row="{{ person.export_json }}">
+              <td class="select-col"><input type="checkbox" class="row-check"></td>
               <td>{% if person.notes %}<span class="expand-indicator">&rsaquo;</span>{% endif %}{{ person.name }}</td>
               <td class="links">
                 <div class="btn-row">
@@ -70,7 +76,7 @@
             </tr>
             {% if person.notes %}
               <tr class="notes-row" id="notes-{{ person.id }}" hidden>
-                <td colspan="5" class="wrap notes-cell">{{ person.notes|linebreaksbr }}</td>
+                <td colspan="6" class="wrap notes-cell">{{ person.notes|linebreaksbr }}</td>
               </tr>
             {% endif %}
           {% endfor %}
@@ -88,12 +94,20 @@
 <script>
   document.querySelectorAll('tr.person-row.has-notes').forEach(function (row) {
     row.addEventListener('click', function (e) {
-      if (e.target.closest('.icon-btn')) return;
+      if (e.target.closest('.icon-btn') || e.target.matches('input[type=checkbox]')) return;
       var target = document.getElementById(row.getAttribute('data-target'));
       if (!target) return;
       target.hidden = !target.hidden;
       row.classList.toggle('expanded', !target.hidden);
     });
+  });
+
+  initRowSelection({
+    checkboxSelector: ".row-check",
+    selectAllSelector: "#select-all",
+    exportButtonSelector: "#export-btn",
+    summarySelector: "#select-summary",
+    filename: () => "{{ person_list.slug }}.csv",
   });
 
   function fallbackCopy(text, cb) {

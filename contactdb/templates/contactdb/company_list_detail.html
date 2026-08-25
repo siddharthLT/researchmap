@@ -13,10 +13,15 @@
   </header>
 
   {% if companies %}
+    <div class="export-toolbar">
+      <span class="select-summary" id="select-summary"></span>
+      <button type="button" class="btn-export" id="export-btn">Export CSV</button>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
+            <th class="select-col"><input type="checkbox" class="select-all-check" id="select-all"></th>
             <th>Name</th>
             <th>Links</th>
             <th>Location</th>
@@ -29,7 +34,8 @@
         </thead>
         <tbody>
           {% for company in companies %}
-            <tr>
+            <tr data-row="{{ company.export_json }}">
+              <td class="select-col"><input type="checkbox" class="row-check"></td>
               <td>{{ company.name }}</td>
               <td class="links">
                 <div class="btn-row">
@@ -60,4 +66,16 @@
   {% endif %}
 
   <footer>ContactDB &middot; {{ company_list.name }} &middot; {{ companies|length }} companies</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  initRowSelection({
+    checkboxSelector: ".row-check",
+    selectAllSelector: "#select-all",
+    exportButtonSelector: "#export-btn",
+    summarySelector: "#select-summary",
+    filename: () => "{{ company_list.slug }}.csv",
+  });
+</script>
 {% endblock %}
