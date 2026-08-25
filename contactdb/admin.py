@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import CompanyList, CompanyListItem, Person, PersonList, PersonListItem
+from .models import CompanyBrief, CompanyList, CompanyListItem, Person, PersonList, PersonListItem
 
 
 class CompanyListItemInline(admin.TabularInline):
@@ -39,3 +39,10 @@ class PersonListAdmin(admin.ModelAdmin):
 class PersonAdmin(admin.ModelAdmin):
     list_display = ("name", "title", "display_company", "email")
     search_fields = ("name", "title", "email", "company__name", "company_name")
+
+
+@admin.register(CompanyBrief)
+class CompanyBriefAdmin(admin.ModelAdmin):
+    list_display = ("company", "source_document", "updated_at")
+    search_fields = ("company__name", "source_document")
+    autocomplete_fields = ["company"]

@@ -125,6 +125,53 @@ class Person(models.Model):
         return self.company.name if self.company else self.company_name
 
 
+class CompanyBrief(models.Model):
+    """Structured research brief for a company, normalized to a common set of
+    sections regardless of which source report it came from (e.g. a Biolens
+    PDF). One brief per Company; re-running an import updates it in place."""
+
+    company = models.OneToOneField(
+        "companymap.Company",
+        related_name="brief",
+        on_delete=models.CASCADE,
+    )
+    legal_name = models.CharField(max_length=255, blank=True)
+    founded = models.CharField(max_length=64, blank=True)
+    headquarters = models.CharField(max_length=255, blank=True)
+    employee_count = models.CharField(max_length=64, blank=True)
+    ownership = models.CharField(max_length=255, blank=True)
+    global_presence = models.CharField(max_length=255, blank=True)
+
+    nature = models.TextField(blank=True)
+    service_model = models.TextField(blank=True)
+    client_profile = models.TextField(blank=True)
+    modality_focus = models.TextField(blank=True)
+    therapeutic_focus = models.TextField(blank=True)
+    trial_phase_preference = models.TextField(blank=True)
+
+    decision_makers = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of {name, title, note} dicts.",
+    )
+    latest_signals_period = models.CharField(max_length=128, blank=True)
+    latest_signals = models.JSONField(default=list, blank=True, help_text="List of bullet strings.")
+
+    opportunity_assessment = models.TextField(blank=True)
+    summary = models.TextField(blank=True)
+    sources = models.JSONField(default=list, blank=True, help_text="List of citation strings/URLs.")
+    source_document = models.CharField(max_length=255, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "company brief"
+
+    def __str__(self):
+        return f"Brief: {self.company.name}"
+
+
 class PersonListItem(models.Model):
     list = models.ForeignKey(PersonList, related_name="items", on_delete=models.CASCADE)
     person = models.ForeignKey(Person, related_name="list_items", on_delete=models.CASCADE)

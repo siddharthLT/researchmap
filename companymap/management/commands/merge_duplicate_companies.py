@@ -41,8 +41,11 @@ class Command(BaseCommand):
                 by_domain[c.domain.lower()].append(c)
         groups = [g for g in by_domain.values() if len(g) > 1]
 
-        # Known same-entity pair not sharing a domain (different TLD/rebrand).
-        extra_pairs = [("Comprehensive Cell Solutions", "Comprehensive Cell Solutions (CCS)")]
+        # Known same-entity pairs not sharing a domain (different TLD/rebrand).
+        extra_pairs = [
+            ("Comprehensive Cell Solutions", "Comprehensive Cell Solutions (CCS)"),
+            ("Made Scientific", "BioCentriq"),  # BioCentriq rebranded to Made Scientific in 2024
+        ]
         for name_a, name_b in extra_pairs:
             a = Company.objects.filter(name=name_a).first()
             b = Company.objects.filter(name=name_b).first()
