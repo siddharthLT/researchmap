@@ -1,0 +1,82 @@
+{% extends "contactdb/base.html" %}
+
+{% block title %}{{ person_list.name }} · ContactDB{% endblock %}
+
+{% block extra_style %}
+  .list-header { margin-bottom: 18px; }
+  .list-header h2 { margin: 0 0 4px; font-size: 1.35rem; }
+  .list-header p { margin: 0; color: var(--muted); font-size: .9rem; }
+  .table-wrap {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: auto;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: .86rem; }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  th {
+    background: #fcfaf6;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-size: .72rem;
+    position: sticky;
+    top: 0;
+  }
+  td.wrap { white-space: normal; max-width: 320px; }
+  tr:last-child td { border-bottom: none; }
+  .empty-state {
+    color: var(--muted);
+    font-size: .9rem;
+    padding: 18px;
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+  }
+{% endblock %}
+
+{% block content %}
+  <p class="breadcrumb"><a href="{% url 'contactdb:home' %}">ContactDB</a> / People</p>
+  <div class="list-header">
+    <h2>{{ person_list.name }}</h2>
+    <p>{{ people|length }} contact{{ people|length|pluralize }}{% if person_list.description %} — {{ person_list.description }}{% endif %}</p>
+  </div>
+
+  {% if people %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Title</th>
+            <th>Company</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>LinkedIn</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for person in people %}
+            <tr>
+              <td>{{ person.name }}</td>
+              <td>{{ person.title|default:"—" }}</td>
+              <td>{{ person.display_company|default:"—" }}</td>
+              <td>{% if person.email %}<a href="mailto:{{ person.email }}">{{ person.email }}</a>{% else %}—{% endif %}</td>
+              <td>{{ person.phone|default:"—" }}</td>
+              <td>{% if person.linkedin_url %}<a href="{{ person.linkedin_url }}" target="_blank" rel="noopener">Profile</a>{% else %}—{% endif %}</td>
+              <td class="wrap">{{ person.notes|default:"—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">This list has no people yet.</div>
+  {% endif %}
+{% endblock %}
