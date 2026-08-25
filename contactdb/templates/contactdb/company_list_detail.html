@@ -10,6 +10,7 @@
     <div class="meta">
       <span>{{ companies|length }} compan{{ companies|length|pluralize:"y,ies" }}</span>
     </div>
+    <div class="legend"><span aria-hidden="true">🔥</span><span>Warm connection at this company</span></div>
   </header>
 
   {% if companies %}
@@ -35,7 +36,7 @@
           {% for company in companies %}
             <tr data-row="{{ company.export_json }}">
               <td class="select-col"><input type="checkbox" class="row-check"></td>
-              <td>{{ company.name }}</td>
+              <td>{% if company.has_warm_connection %}<span class="warm-flame" aria-hidden="true" title="Warm connection">🔥</span>{% endif %}{{ company.name }}</td>
               <td class="links">
                 <div class="btn-row">
                   {% if company.url %}
