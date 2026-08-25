@@ -4,72 +4,209 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}ContactDB{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f7f3ec;
-      --ink: #172026;
-      --muted: #64717a;
-      --panel: #ffffff;
-      --line: #d8dedf;
-      --blue: #2563eb;
-      --green: #138a72;
-      --orange: #c05621;
-      --shadow: 0 18px 45px rgba(23, 32, 38, .14);
+      color-scheme: light;
+      --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#eef0ee;
+      --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+      --grid:#e1e0d9; --border:rgba(11,11,11,0.10);
+      --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+      --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7;
     }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+        --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+        --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+        --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+        --s5:#d55181; --s6:#008300; --s7:#9085e9;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+      --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --s5:#d55181; --s6:#008300; --s7:#9085e9;
+    }
+
     * { box-sizing: border-box; }
     body {
-      margin: 0;
-      background: var(--bg);
+      background: var(--page);
       color: var(--ink);
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-    a { color: var(--blue); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .topbar {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 20px 32px;
-      border-bottom: 1px solid var(--line);
-      background: #fcfaf6;
-    }
-    .topbar h1 {
+      font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.5;
       margin: 0;
-      font-size: 1.3rem;
+      padding: 0 24px 96px;
     }
-    .topbar nav a {
-      color: var(--muted);
-      font-weight: 600;
-      font-size: .85rem;
-      text-transform: uppercase;
-      letter-spacing: .05em;
+    a { color: var(--s1); }
+    .wrap { max-width: 1080px; margin: 0 auto; }
+
+    /* ---- top nav ---- */
+    .topnav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0; border-bottom: 1px solid var(--border);
     }
-    .topbar nav a.map-link { margin-left: 18px; }
-    main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 28px 32px 60px;
+    .topnav .brand {
+      font-family: "IBM Plex Mono", monospace; font-size: 12px;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+      text-decoration: none;
     }
-    .breadcrumb {
-      font-size: .85rem;
-      color: var(--muted);
-      margin-bottom: 14px;
+    .topnav .brand strong { color: var(--ink); }
+    .topnav nav { display: flex; gap: 8px; }
+
+    /* ---- masthead ---- */
+    .masthead { padding: 40px 0 32px; border-bottom: 1px solid var(--border); }
+    .eyebrow {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 14px;
     }
-    .breadcrumb a { color: var(--muted); font-weight: 600; }
+    .eyebrow a { color: var(--muted); }
+    h1 {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-weight: 600; font-size: clamp(28px, 4vw, 40px);
+      line-height: 1.14; margin: 0 0 14px; text-wrap: balance;
+    }
+    h2.page-title {
+      font-family: "Source Serif 4", Georgia, serif;
+      font-weight: 600; font-size: clamp(24px, 3.4vw, 32px);
+      line-height: 1.16; margin: 0 0 14px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    }
+    .dek {
+      font-size: 16px; color: var(--ink-2); max-width: 68ch; margin: 0 0 18px;
+    }
+    .meta {
+      font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted);
+      display: flex; gap: 18px; flex-wrap: wrap;
+    }
+
+    /* ---- stat tiles ---- */
+    .stats {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+      background: var(--border); border: 1px solid var(--border);
+      margin: 32px 0; border-radius: 10px; overflow: hidden;
+    }
+    .stat { background: var(--surface); padding: 20px 18px; }
+    .stat-value {
+      font-family: "Source Serif 4", Georgia, serif; font-weight: 600;
+      font-size: 28px; font-variant-numeric: tabular-nums; margin-bottom: 4px;
+    }
+    .stat-label { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+
+    /* ---- chips / jump nav / cards ---- */
+    .chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 6px 12px 6px 10px; font-size: 12.5px; color: var(--ink-2);
+      text-decoration: none; background: var(--surface);
+    }
+    .chip:hover { border-color: var(--c, var(--s1)); text-decoration: none; }
+    .chip-n {
+      font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted);
+      background: var(--surface-2); border-radius: 999px; padding: 1px 8px;
+    }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: none; }
+
+    /* ---- category sections ---- */
+    .cat-section { margin-top: 44px; scroll-margin-top: 20px; }
+    .cat-title { display: flex; gap: 16px; align-items: flex-start; }
+    .rule { width: 4px; align-self: stretch; min-height: 36px; background: var(--c); border-radius: 2px; flex: none; }
+    .cat-title h2 {
+      font-family: "Source Serif 4", Georgia, serif; font-weight: 600;
+      font-size: 21px; margin: 0 0 6px; display: flex; align-items: baseline; gap: 10px;
+    }
+    .cat-count {
+      font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 500;
+      color: var(--ink-2); background: var(--surface-2); border-radius: 999px;
+      padding: 2px 10px; border: 1px solid var(--c);
+    }
+    .cat-desc { margin: 0; color: var(--ink-2); font-size: 14px; max-width: 62ch; }
+
+    /* ---- list cards (home) ---- */
+    .list-grid { display: grid; gap: 10px; margin-top: 18px; }
+    .list-card {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 14px 16px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; text-decoration: none; color: var(--ink);
+    }
+    .list-card:hover { border-color: var(--c, var(--s1)); text-decoration: none; }
+    .list-card .name { font-weight: 600; color: var(--ink); }
+    .list-card .desc { margin: 3px 0 0; color: var(--muted); font-size: 12.5px; }
+    .list-card .count {
+      flex: none; font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+      color: var(--ink-2); background: var(--surface-2); border-radius: 999px;
+      padding: 3px 11px; border: 1px solid var(--border);
+    }
+
+    /* ---- table ---- */
+    .table-wrap {
+      margin-top: 18px; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 640px; }
+    thead th {
+      text-align: left; font-family: "IBM Plex Mono", monospace; font-weight: 500;
+      font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
+      padding: 11px 16px; border-bottom: 1px solid var(--grid); position: sticky; top: 0; background: var(--surface);
+      white-space: nowrap;
+    }
+    tbody td { padding: 10px 16px; border-bottom: 1px solid var(--grid); color: var(--ink-2); vertical-align: top; white-space: nowrap; }
+    tbody td.wrap { white-space: normal; max-width: 320px; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody td:first-child { color: var(--ink); font-weight: 500; }
+    tbody td:first-child a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--border); }
+    tbody td:first-child a:hover { border-bottom-color: var(--s1); color: var(--s1); }
+    td.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+    tbody tr:hover td { background: var(--surface-2); }
+
+    td.links { white-space: nowrap; }
+    .btn-row { display: flex; gap: 6px; }
+    .icon-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: "IBM Plex Mono", monospace; font-size: 11px;
+      border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+      color: var(--ink-2); padding: 4px 8px; cursor: pointer;
+      text-decoration: none; line-height: 1; white-space: nowrap;
+    }
+    a.icon-btn:hover { border-color: var(--s1); color: var(--s1); text-decoration: none; }
+    button.icon-btn:hover { border-color: var(--c, var(--s1)); color: var(--ink); }
+    .icon-btn.is-disabled { opacity: 0.35; cursor: not-allowed; }
+    .icon-btn.copied { border-color: #0ca30c; color: #0ca30c; }
+    .icon-btn.copy-failed { border-color: var(--s2); color: var(--s2); }
+
+    .empty-state {
+      color: var(--muted); font-size: 14px; padding: 20px;
+      border: 1px dashed var(--border); border-radius: 10px; margin-top: 18px;
+    }
+
+    footer {
+      margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border);
+      font-size: 12px; color: var(--muted); font-family: "IBM Plex Mono", monospace;
+    }
+
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
     {% block extra_style %}{% endblock %}
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <h1>ContactDB</h1>
-    <nav>
-      <a href="{% url 'contactdb:home' %}">Lists</a>
-      <a class="map-link" href="{% url 'companymap:map' %}">Company Map</a>
-    </nav>
-  </div>
-  <main>
+  <div class="wrap">
+    <div class="topnav">
+      <a class="brand" href="{% url 'contactdb:home' %}"><strong>ContactDB</strong></a>
+      <nav>
+        <a class="chip" href="{% url 'contactdb:home' %}">Lists</a>
+        <a class="chip" href="{% url 'companymap:map' %}">Company Map</a>
+      </nav>
+    </div>
     {% block content %}{% endblock %}
-  </main>
+  </div>
+  {% block extra_js %}{% endblock %}
 </body>
 </html>
