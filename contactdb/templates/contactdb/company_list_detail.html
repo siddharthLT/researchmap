@@ -13,6 +13,8 @@
     <div class="legend"><span aria-hidden="true">🔥</span><span>Warm connection at this company</span></div>
   </header>
 
+  <button type="button" class="btn-add-record" id="add-company-btn">+ Add Company</button>
+
   {% if companies %}
     <div class="filter-bar">
       {% if modality_options %}
@@ -105,6 +107,12 @@
                       <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 14.5S3 9.8 3 6.2a5 5 0 0 1 10 0c0 3.6-5 8.3-5 8.3Z"/><circle cx="8" cy="6.2" r="1.8"/></svg>Map
                     </span>
                   {% endif %}
+                  <form class="delete-form" method="post" action="{% url 'contactdb:company_list_remove' company_list.slug company.id %}" data-confirm="Remove {{ company.name }} from {{ company_list.name }}? The company record itself won't be deleted.">
+                    {% csrf_token %}
+                    <button type="submit" class="icon-btn icon-btn-danger" aria-label="Remove {{ company.name }} from this list">
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6 4.5V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5M6.5 7.5v4M9.5 7.5v4M4 4.5l.7 8.4a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.4"/></svg>Delete
+                    </button>
+                  </form>
                 </div>
               </td>
               <td class="wrap">{{ company.modality|default:"—" }}</td>
@@ -136,6 +144,60 @@
         <span id="map-modal-address"></span>
         <a id="map-modal-osm-link" href="#" target="_blank" rel="noopener">Open in Company Map &#8599;</a>
       </div>
+    </div>
+  </div>
+
+  <div class="form-modal-overlay" id="add-company-overlay">
+    <div class="form-modal">
+      <div class="form-modal-header">
+        <span>Add company to {{ company_list.name }}</span>
+        <button type="button" class="form-modal-close" id="add-company-close" aria-label="Close">&times;</button>
+      </div>
+      <form method="post" action="{% url 'contactdb:company_list_add' company_list.slug %}">
+        {% csrf_token %}
+        <div class="form-modal-body">
+          <div class="form-field">
+            <label for="company-name">Name *</label>
+            <input type="text" id="company-name" name="name" required>
+          </div>
+          <div class="form-field">
+            <label for="company-url">Website</label>
+            <input type="url" id="company-url" name="url" placeholder="https://">
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="company-city">City</label>
+              <input type="text" id="company-city" name="city">
+            </div>
+            <div class="form-field">
+              <label for="company-state">State</label>
+              <input type="text" id="company-state" name="state_code" maxlength="2" placeholder="e.g. NJ">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="company-segment">Segment</label>
+              <input type="text" id="company-segment" name="segment" placeholder="e.g. CDMO">
+            </div>
+            <div class="form-field">
+              <label for="company-modality">Modality</label>
+              <input type="text" id="company-modality" name="modality" placeholder="e.g. Small Molecules">
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="company-industry">Industry</label>
+            <input type="text" id="company-industry" name="industry">
+          </div>
+          <div class="form-field">
+            <label for="company-notes">Notes</label>
+            <textarea id="company-notes" name="notes"></textarea>
+          </div>
+        </div>
+        <div class="form-modal-footer">
+          <button type="button" class="btn-secondary" id="add-company-cancel">Cancel</button>
+          <button type="submit" class="btn-primary">Add Company</button>
+        </div>
+      </form>
     </div>
   </div>
 {% endblock %}
@@ -213,6 +275,32 @@
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeMapModal();
+    });
+  })();
+
+  (function initAddCompanyModal() {
+    const overlay = document.getElementById("add-company-overlay");
+    const openBtn = document.getElementById("add-company-btn");
+    const closeBtn = document.getElementById("add-company-close");
+    const cancelBtn = document.getElementById("add-company-cancel");
+    if (!overlay || !openBtn) return;
+
+    function open() {
+      overlay.classList.add("open");
+      document.getElementById("company-name").focus();
+    }
+    function close() {
+      overlay.classList.remove("open");
+    }
+
+    openBtn.addEventListener("click", open);
+    closeBtn.addEventListener("click", close);
+    cancelBtn.addEventListener("click", close);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && overlay.classList.contains("open")) close();
     });
   })();
 </script>

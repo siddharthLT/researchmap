@@ -228,6 +228,67 @@
       border: 1px dashed var(--border); border-radius: 10px; margin-top: 18px;
     }
 
+    /* ---- flash messages ---- */
+    .flash-stack { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+    .flash {
+      padding: 10px 14px; border-radius: 8px; font-size: 13px;
+      border: 1px solid var(--border); background: var(--surface);
+    }
+    .flash-success { border-color: var(--s3); color: var(--s3); }
+    .flash-error { border-color: var(--s2); color: var(--s2); }
+
+    /* ---- add-record button + form modal (shared by company/person list views) ---- */
+    .btn-add-record {
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+      font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-weight: 600;
+      padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--ink); cursor: pointer;
+    }
+    .btn-add-record:hover { border-color: var(--s1); color: var(--s1); }
+    .icon-btn-danger:hover { border-color: var(--s2); color: var(--s2); }
+    .delete-form { display: inline; }
+
+    .form-modal-overlay {
+      position: fixed; inset: 0; background: rgba(11,11,11,.55); display: none;
+      align-items: center; justify-content: center; z-index: 1000; padding: 24px;
+    }
+    .form-modal-overlay.open { display: flex; }
+    .form-modal {
+      background: var(--surface); border-radius: 10px; width: min(480px, 100%);
+      max-height: 90vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      border: 1px solid var(--border);
+    }
+    .form-modal-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 17px; color: var(--ink);
+    }
+    .form-modal-close { background: none; border: 0; font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink-2); padding: 0 4px; }
+    .form-modal-close:hover { color: var(--ink); }
+    .form-modal-body { padding: 16px 18px; display: grid; gap: 12px; }
+    .form-field { display: grid; gap: 5px; }
+    .form-field label {
+      font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .06em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .form-field input, .form-field select, .form-field textarea {
+      font: inherit; font-size: 13.5px; padding: 8px 10px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--page); color: var(--ink); width: 100%;
+    }
+    .form-field textarea { resize: vertical; min-height: 60px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--border); }
+    .btn-primary {
+      font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-weight: 600;
+      padding: 8px 16px; border-radius: 6px; border: 1px solid var(--ink);
+      background: var(--ink); color: var(--page); cursor: pointer;
+    }
+    .btn-secondary {
+      font-family: "IBM Plex Mono", monospace; font-size: 12.5px; padding: 8px 16px;
+      border-radius: 6px; border: 1px solid var(--border); background: var(--surface);
+      color: var(--ink-2); cursor: pointer;
+    }
+
     /* ---- row selection + CSV export ---- */
     .export-toolbar {
       display: flex; align-items: center; justify-content: space-between;
@@ -268,9 +329,25 @@
         <a class="chip" href="{% url 'conferences:home' %}">Conferences</a>
       </nav>
     </div>
+    {% if messages %}
+      <div class="flash-stack">
+        {% for message in messages %}
+          <div class="flash flash-{{ message.tags|default:'info' }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
     {% block content %}{% endblock %}
   </div>
   <script>
+    document.addEventListener("submit", (event) => {
+      const form = event.target.closest(".delete-form");
+      if (!form) return;
+      const message = form.dataset.confirm || "Remove this record?";
+      if (!window.confirm(message)) {
+        event.preventDefault();
+      }
+    });
+
     function csvEscape(value) {
       const s = String(value === null || value === undefined ? "" : value);
       return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
