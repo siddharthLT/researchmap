@@ -2,13 +2,15 @@ import json
 import re
 from collections import Counter
 
+from django.contrib import messages
 from django.db.models import Count
 from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from companymap.models import Company
 
-from .models import CompanyBrief, CompanyList, Person, PersonList
+from .models import CompanyBrief, CompanyList, CompanyListItem, Person, PersonList, PersonListItem
 
 CONNECTOR_SLUGS = {
     "vedant": "Vedant",
@@ -140,6 +142,41 @@ def company_list_detail(request, slug):
     )
 
 
+@require_POST
+def company_list_add(request, slug):
+    company_list = get_object_or_404(CompanyList, slug=slug)
+    name = request.POST.get("name", "").strip()
+    if not name:
+        messages.error(request, "Company name is required.")
+        return redirect("contactdb:company_list_detail", slug=slug)
+
+    company = Company.objects.create(
+        name=name,
+        url=request.POST.get("url", "").strip(),
+        city=request.POST.get("city", "").strip(),
+        state_code=request.POST.get("state_code", "").strip().upper()[:2],
+        segment=request.POST.get("segment", "").strip(),
+        modality=request.POST.get("modality", "").strip(),
+        industry=request.POST.get("industry", "").strip(),
+        notes=request.POST.get("notes", "").strip(),
+        account_list_source=f"Manually added to {company_list.name}",
+    )
+    CompanyListItem.objects.get_or_create(list=company_list, company=company)
+    messages.success(request, f"Added {company.name} to {company_list.name}.")
+    return redirect("contactdb:company_list_detail", slug=slug)
+
+
+@require_POST
+def company_list_remove(request, slug, company_id):
+    company_list = get_object_or_404(CompanyList, slug=slug)
+    item = CompanyListItem.objects.filter(list=company_list, company_id=company_id).first()
+    if item:
+        company_name = item.company.name
+        item.delete()
+        messages.success(request, f"Removed {company_name} from {company_list.name}.")
+    return redirect("contactdb:company_list_detail", slug=slug)
+
+
 def person_list_detail(request, slug):
     person_list = get_object_or_404(PersonList, slug=slug)
     people = person_list.people.all().select_related("company").order_by("name")
@@ -190,8 +227,49 @@ def person_list_detail(request, slug):
             "modality_options": modality_options,
             "segment_options": segment_options,
             "role_options": role_options,
+            "segment_choices": Person.Segment.choices,
         },
     )
+
+
+@require_POST
+def person_list_add(request, slug):
+    person_list = get_object_or_404(PersonList, slug=slug)
+    name = request.POST.get("name", "").strip()
+    if not name:
+        messages.error(request, "Person name is required.")
+        return redirect("contactdb:person_list_detail", slug=slug)
+
+    company = None
+    company_id = request.POST.get("company_id", "").strip()
+    if company_id.isdigit():
+        company = Company.objects.filter(id=company_id).first()
+
+    person = Person.objects.create(
+        name=name,
+        title=request.POST.get("title", "").strip(),
+        email=request.POST.get("email", "").strip(),
+        phone=request.POST.get("phone", "").strip(),
+        linkedin_url=request.POST.get("linkedin_url", "").strip(),
+        company=company,
+        company_name=request.POST.get("company_name", "").strip(),
+        segment=request.POST.get("segment", "").strip(),
+        notes=request.POST.get("notes", "").strip(),
+    )
+    PersonListItem.objects.get_or_create(list=person_list, person=person)
+    messages.success(request, f"Added {person.name} to {person_list.name}.")
+    return redirect("contactdb:person_list_detail", slug=slug)
+
+
+@require_POST
+def person_list_remove(request, slug, person_id):
+    person_list = get_object_or_404(PersonList, slug=slug)
+    item = PersonListItem.objects.filter(list=person_list, person_id=person_id).first()
+    if item:
+        person_name = item.person.name
+        item.delete()
+        messages.success(request, f"Removed {person_name} from {person_list.name}.")
+    return redirect("contactdb:person_list_detail", slug=slug)
 
 
 def connection_universe(request, slug):

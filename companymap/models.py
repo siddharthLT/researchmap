@@ -7,6 +7,12 @@ class Company(models.Model):
         EAST_COAST = "east", "East Coast"
         OTHER = "other", "Other"
 
+    class SynthegoRelation(models.TextChoices):
+        COMPETITOR = "competitor", "Synthego Competitor"
+        ADJACENT = "adjacent", "Synthego Adjacent"
+        PARTNER = "partner", "Synthego Partner"
+        NO_RELATION = "no_relation", "No Relation with Synthego"
+
     name = models.CharField(max_length=255)
     url = models.URLField(blank=True)
     domain = models.CharField(max_length=255, blank=True)
@@ -34,6 +40,13 @@ class Company(models.Model):
         help_text="Comma-separated therapeutic modality focus, e.g. Small Molecules, Biologics, Cell Therapy.",
     )
     priority = models.CharField(max_length=64, blank=True)
+    synthego_relation = models.CharField(
+        max_length=16,
+        choices=SynthegoRelation.choices,
+        blank=True,
+        help_text="How this company's business relates to Synthego's (CDMO/CRO/Reagents companies only).",
+    )
+    synthego_relation_notes = models.CharField(max_length=255, blank=True)
     account_list_source = models.CharField(max_length=255, blank=True)
     annual_revenue = models.BigIntegerField(null=True, blank=True)
     funding_data = models.TextField(blank=True)

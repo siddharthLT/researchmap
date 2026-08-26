@@ -90,22 +90,31 @@ def company_map_data(request):
             }
         )
 
-    warm_company_ids = set(
+    warm_connectors_by_company = defaultdict(set)
+    for company_id, connectors in (
         Person.objects.exclude(prior_connections=[])
         .exclude(company__isnull=True)
-        .values_list("company_id", flat=True)
-        .distinct()
-    )
-    conference_company_ids = set(
+        .values_list("company_id", "prior_connections")
+    ):
+        for connector in connectors:
+            if connector:
+                warm_connectors_by_company[company_id].add(connector)
+
+    conferences_by_company = defaultdict(set)
+    for company_id, conference_name in (
         ConferenceCompany.objects.exclude(company__isnull=True)
-        .values_list("company_id", flat=True)
-        .distinct()
-    )
+        .select_related("conference")
+        .values_list("company_id", "conference__name")
+    ):
+        conferences_by_company[company_id].add(conference_name)
+
     companies_data = []
     for company in companies:
         data = company.as_map_dict()
-        data["has_warm_connection"] = company.id in warm_company_ids
-        data["has_conference"] = company.id in conference_company_ids
+        data["warm_connectors"] = sorted(warm_connectors_by_company.get(company.id, ()))
+        data["has_warm_connection"] = bool(data["warm_connectors"])
+        data["conferences"] = sorted(conferences_by_company.get(company.id, ()))
+        data["has_conference"] = bool(data["conferences"])
         companies_data.append(data)
 
     return JsonResponse(

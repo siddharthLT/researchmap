@@ -26,6 +26,8 @@
     </div>
   </header>
 
+  <button type="button" class="btn-add-record" id="add-person-btn">+ Add Person</button>
+
   {% if people %}
     <div class="filter-bar">
       {% if modality_options %}
@@ -111,6 +113,12 @@
                       <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">Copy email</span>
                     </span>
                   {% endif %}
+                  <form class="delete-form" method="post" action="{% url 'contactdb:person_list_remove' person_list.slug person.id %}" data-confirm="Remove {{ person.name }} from {{ person_list.name }}? The person record itself won't be deleted." onclick="event.stopPropagation()">
+                    {% csrf_token %}
+                    <button type="submit" class="icon-btn icon-btn-danger" aria-label="Remove {{ person.name }} from this list">
+                      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6 4.5V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.5M6.5 7.5v4M9.5 7.5v4M4 4.5l.7 8.4a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.4"/></svg><span class="btn-txt">Delete</span>
+                    </button>
+                  </form>
                 </div>
               </td>
               <td class="wrap">{{ person.title|default:"—" }}</td>
@@ -131,6 +139,63 @@
   {% endif %}
 
   <footer>ContactDB &middot; {{ person_list.name }} &middot; {{ people|length }} contacts</footer>
+
+  <div class="form-modal-overlay" id="add-person-overlay">
+    <div class="form-modal">
+      <div class="form-modal-header">
+        <span>Add person to {{ person_list.name }}</span>
+        <button type="button" class="form-modal-close" id="add-person-close" aria-label="Close">&times;</button>
+      </div>
+      <form method="post" action="{% url 'contactdb:person_list_add' person_list.slug %}">
+        {% csrf_token %}
+        <div class="form-modal-body">
+          <div class="form-field">
+            <label for="person-name">Name *</label>
+            <input type="text" id="person-name" name="name" required>
+          </div>
+          <div class="form-field">
+            <label for="person-title">Title</label>
+            <input type="text" id="person-title" name="title">
+          </div>
+          <div class="form-field">
+            <label for="person-company">Company</label>
+            <input type="text" id="person-company" name="company_name">
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="person-email">Email</label>
+              <input type="email" id="person-email" name="email">
+            </div>
+            <div class="form-field">
+              <label for="person-phone">Phone</label>
+              <input type="text" id="person-phone" name="phone">
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="person-linkedin">LinkedIn URL</label>
+            <input type="url" id="person-linkedin" name="linkedin_url" placeholder="https://">
+          </div>
+          <div class="form-field">
+            <label for="person-segment">Segment</label>
+            <select id="person-segment" name="segment">
+              <option value="">—</option>
+              {% for value, label in segment_choices %}
+                <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="person-notes">Notes</label>
+            <textarea id="person-notes" name="notes"></textarea>
+          </div>
+        </div>
+        <div class="form-modal-footer">
+          <button type="button" class="btn-secondary" id="add-person-cancel">Cancel</button>
+          <button type="submit" class="btn-primary">Add Person</button>
+        </div>
+      </form>
+    </div>
+  </div>
 {% endblock %}
 
 {% block extra_js %}
@@ -216,5 +281,31 @@
       fallbackCopy(email, settle);
     }
   }
+
+  (function initAddPersonModal() {
+    const overlay = document.getElementById("add-person-overlay");
+    const openBtn = document.getElementById("add-person-btn");
+    const closeBtn = document.getElementById("add-person-close");
+    const cancelBtn = document.getElementById("add-person-cancel");
+    if (!overlay || !openBtn) return;
+
+    function open() {
+      overlay.classList.add("open");
+      document.getElementById("person-name").focus();
+    }
+    function close() {
+      overlay.classList.remove("open");
+    }
+
+    openBtn.addEventListener("click", open);
+    closeBtn.addEventListener("click", close);
+    cancelBtn.addEventListener("click", close);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && overlay.classList.contains("open")) close();
+    });
+  })();
 </script>
 {% endblock %}
