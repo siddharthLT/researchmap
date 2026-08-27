@@ -47,6 +47,16 @@ class Company(models.Model):
         help_text="How this company's business relates to Synthego's (CDMO/CRO/Reagents companies only).",
     )
     synthego_relation_notes = models.CharField(max_length=255, blank=True)
+    has_marketing_presales_team = models.BooleanField(
+        default=False,
+        help_text="True if a known contact's department is Marketing, Business Development, Sales Engineering, "
+        "or Demand Generation. Derived from existing Person records only.",
+    )
+    has_data_bi_team = models.BooleanField(
+        default=False,
+        help_text="True if a known contact's department is Data Warehouse, Data Science, BI, Digital "
+        "Transformation, or IT. Derived from existing Person records only.",
+    )
     account_list_source = models.CharField(max_length=255, blank=True)
     annual_revenue = models.BigIntegerField(null=True, blank=True)
     funding_data = models.TextField(blank=True)

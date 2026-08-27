@@ -71,9 +71,12 @@ def company_map_data(request):
         .annotate(company_count=Count("id"))
         .order_by("state_code")
     )
+    companies = list(companies)
+
     city_groups = defaultdict(list)
-    for company in companies.exclude(city="", state_code=""):
-        city_groups[(company.state_code, company.city)].append(company)
+    for company in companies:
+        if company.city and company.state_code:
+            city_groups[(company.state_code, company.city)].append(company)
 
     cities = []
     for (code, city_name), group in city_groups.items():

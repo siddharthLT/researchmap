@@ -52,69 +52,85 @@
       font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     .shell {
-      display: grid;
-      grid-template-columns: 320px minmax(0, 1fr);
+      position: relative;
       height: 100vh;
       min-height: 620px;
+      overflow: hidden;
     }
-    .rail {
+    .glass-panel {
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(16px) saturate(110%);
+      -webkit-backdrop-filter: blur(16px) saturate(110%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 14px 32px rgba(0,0,0,.14);
+    }
+    .left-stack {
+      position: absolute;
+      z-index: 600;
+      top: 16px;
+      left: 16px;
+      bottom: 16px;
+      width: 272px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
-      padding: 22px;
-      background: var(--surface);
-      border-right: 1px solid var(--line);
+      gap: 12px;
+      pointer-events: none;
+    }
+    .left-stack > * { pointer-events: auto; }
+    .filters-panel {
+      flex: 0 0 auto;
+      max-height: 58vh;
       overflow: auto;
-      z-index: 500;
+      padding: 12px 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     .brand h1 {
-      margin: 0 0 6px;
+      margin: 0 0 1px;
       font-family: "Source Serif 4", Georgia, serif;
       font-weight: 600;
-      font-size: 1.5rem;
+      font-size: 1.02rem;
       letter-spacing: 0;
     }
     .brand p {
       margin: 0;
-      color: var(--muted);
-      line-height: 1.45;
-      font-size: .95rem;
-    }
-    .toolbar {
-      display: grid;
-      gap: 10px;
+      color: var(--ink-2);
+      line-height: 1.35;
+      font-size: .68rem;
     }
     .filters {
       display: grid;
-      gap: 10px;
+      gap: 8px;
     }
     .filter-field {
       display: grid;
-      gap: 5px;
+      gap: 4px;
     }
     .filter-field label {
       font-family: "IBM Plex Mono", monospace;
       color: var(--muted);
-      font-size: .72rem;
+      font-size: .62rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: .08em;
+      letter-spacing: .07em;
     }
     .filter-chips {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 5px;
     }
     .filter-chip {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      border: 1px solid var(--line);
+      gap: 5px;
+      border: 1px solid var(--border);
       border-radius: 999px;
-      background: var(--panel);
+      background: color-mix(in srgb, var(--surface) 70%, transparent);
       color: var(--ink-2);
-      font-size: 12px;
-      padding: 5px 10px 5px 8px;
+      font-size: 10.5px;
+      padding: 4px 8px 4px 7px;
       cursor: pointer;
       user-select: none;
     }
@@ -122,7 +138,7 @@
     .filter-chip .n {
       font-family: "IBM Plex Mono", monospace;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 10px;
     }
     .filter-chip.active {
       background: var(--ink);
@@ -131,125 +147,202 @@
     }
     .filter-chip.active .n { color: var(--page); opacity: .7; }
     .filter-chip.is-empty { display: none; }
-    .search-row {
+    .legend-row {
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
+      gap: 5px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     input, select, button {
-      min-height: 42px;
+      min-height: 32px;
       border-radius: 8px;
-      border: 1px solid var(--line);
+      border: 1px solid var(--border);
       font: inherit;
     }
     input, select {
       width: 100%;
-      padding: 0 12px;
-      background: var(--panel);
+      padding: 0 10px;
+      background: color-mix(in srgb, var(--surface) 70%, transparent);
       color: var(--ink);
+      font-size: .8rem;
     }
     select {
       appearance: none;
       background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
-      background-position: calc(100% - 18px) 18px, calc(100% - 12px) 18px;
-      background-size: 6px 6px, 6px 6px;
+      background-position: calc(100% - 16px) 14px, calc(100% - 10px) 14px;
+      background-size: 5px 5px, 5px 5px;
       background-repeat: no-repeat;
-      padding-right: 34px;
+      padding-right: 28px;
     }
     input:hover, select:hover {
       border-color: var(--blue);
     }
     button {
-      padding: 0 14px;
+      padding: 0 12px;
       background: var(--ink);
       color: var(--page);
       cursor: pointer;
       font-weight: 700;
+      font-size: .78rem;
     }
-    .status {
-      display: grid;
+    #reset {
+      background: color-mix(in srgb, var(--surface) 70%, transparent);
+      color: var(--ink);
+      font-weight: 600;
+      flex: 0 0 auto;
+    }
+    #reset:hover { border-color: var(--blue); color: var(--blue); }
+    #search { width: 168px; flex: 0 0 auto; }
+    .search-panel {
+      position: absolute;
+      z-index: 600;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: auto;
+      padding: 7px 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .search-top-row {
+      display: flex;
+      align-items: center;
       gap: 10px;
     }
-    .metric {
-      display: grid;
-      grid-template-columns: auto 1fr;
-      gap: 8px 12px;
-      align-items: center;
-      padding: 12px;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
+    .stat-cards {
+      display: flex;
+      gap: 6px;
     }
-    .metric strong { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 1.45rem; }
-    .metric span {
-      color: var(--muted);
-      font-size: .9rem;
+    .stat-card {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: row;
+      align-items: baseline;
+      gap: 4px;
+      min-width: 0;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--surface) 55%, transparent);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .stat-card strong { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: .92rem; line-height: 1; }
+    .stat-card span {
+      color: var(--ink-2);
+      font-size: .6rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
     }
     .legend {
       display: flex;
       align-items: center;
-      gap: 8px;
-      color: var(--muted);
-      font-size: .85rem;
+      gap: 7px;
+      color: var(--ink-2);
+      font-size: .7rem;
+      line-height: 1.25;
+    }
+    #context {
+      margin: 0;
+      color: var(--ink-2);
+      font-size: .64rem;
       line-height: 1.3;
+      text-align: center;
     }
-    .list {
-      display: grid;
-      gap: 8px;
+    .carousel-panel {
+      flex: 1 1 auto;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      padding: 14px 4px 14px 14px;
+      overflow: hidden;
     }
-    .list h2 {
+    .carousel-head {
+      flex: 0 0 auto;
+      padding-right: 10px;
+      margin-bottom: 6px;
+    }
+    #list-title {
       margin: 0;
       font-family: "IBM Plex Mono", monospace;
-      font-size: .76rem;
+      font-size: .72rem;
       font-weight: 600;
       color: var(--muted);
       text-transform: uppercase;
       letter-spacing: .08em;
     }
     .list-meta {
-      margin: -2px 0 2px;
+      margin: 2px 0 0;
       color: var(--muted);
-      font-size: .88rem;
-      line-height: 1.35;
+      font-size: .78rem;
+      line-height: 1.3;
     }
-    .list button {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px;
+    .carousel-viewport {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 26px, black calc(100% - 26px), transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0, black 26px, black calc(100% - 26px), transparent 100%);
+    }
+    .carousel-viewport::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    #list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-right: 10px;
+    }
+    #list button {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
       width: 100%;
-      min-height: 44px;
-      padding: 10px 12px;
-      background: var(--panel);
+      min-height: auto;
+      padding: 7px 10px;
+      background: color-mix(in srgb, var(--surface) 55%, transparent);
       color: var(--ink);
-      border: 1px solid var(--line);
+      border: 1px solid var(--border);
+      border-radius: 8px;
       text-align: left;
-      font-weight: 650;
+      font-weight: 600;
+      font-size: .76rem;
+      line-height: 1.28;
     }
+    #list button:hover { border-color: var(--green); background: color-mix(in srgb, var(--surface) 82%, transparent); }
     .list-label {
       display: inline-flex;
-      align-items: center;
-      gap: 8px;
+      align-items: flex-start;
+      gap: 6px;
       min-width: 0;
+      width: 100%;
     }
     .list-label span:last-child {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      overflow: visible;
+      text-overflow: unset;
+      white-space: normal;
+      word-break: break-word;
     }
-    .list button:hover { border-color: var(--green); }
     .count {
-      display: inline-grid;
-      place-items: center;
-      min-width: 28px;
-      height: 24px;
-      padding: 0 8px;
+      display: inline-block;
+      flex: 0 0 auto;
+      padding: 0 2px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--green) 20%, var(--surface));
-      color: var(--green);
-      font-size: .85rem;
+      background: none;
+      color: var(--muted);
+      font-weight: 500;
+      font-size: .68rem;
     }
     .map-wrap {
-      position: relative;
+      position: absolute;
+      inset: 0;
       min-width: 0;
     }
     #map {
@@ -477,17 +570,14 @@
       font-size: .86rem;
     }
     @media (max-width: 860px) {
-      .shell {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto minmax(520px, 1fr);
-        height: auto;
-        min-height: 100vh;
+      .left-stack {
+        width: calc(100% - 32px);
+        bottom: auto;
+        max-height: 42vh;
       }
-      .rail {
-        border-right: 0;
-        border-bottom: 1px solid var(--line);
-      }
-      .map-wrap { min-height: 620px; }
+      .filters-panel { max-height: 26vh; }
+      .carousel-panel { max-height: 14vh; }
+      .search-panel { width: calc(100% - 32px); top: auto; bottom: 16px; left: 16px; transform: none; }
       .details {
         top: auto;
         bottom: 12px;
@@ -544,6 +634,7 @@
       0% { transform: scale(1); opacity: .55; }
       100% { transform: scale(2.2); opacity: 0; }
     }
+    .leaflet-bottom.leaflet-right { margin-bottom: 76px; }
     .chat-toggle {
       position: fixed;
       right: 24px;
@@ -722,12 +813,23 @@
     View Universe
   </a>
   <div class="shell">
-    <aside class="rail">
-      <div class="brand">
-        <h1>Company Map</h1>
-        <p id="context">Select filters to narrow the map. Donut-marked companies are visit targets.</p>
-      </div>
-      <div class="toolbar">
+    <main class="map-wrap">
+      <div id="map" aria-label="Interactive company map"></div>
+      <aside id="details" class="details" aria-live="polite">
+        <header>
+          <h2 id="detail-name">Select a company</h2>
+          <button class="close" id="close-details" type="button" aria-label="Close">x</button>
+        </header>
+        <div id="detail-body" class="empty">Company details will appear here.</div>
+      </aside>
+    </main>
+
+    <div class="left-stack">
+      <section class="filters-panel glass-panel">
+        <div class="brand">
+          <h1>Company Map</h1>
+          <p>Donut markers are visit targets.</p>
+        </div>
         <div class="filters">
           <div class="filter-field">
             <label for="state-filter">State</label>
@@ -750,41 +852,37 @@
             <div class="filter-chips" id="warmpath-chips"></div>
           </div>
         </div>
+        <div class="legend-row">
+          <div class="legend"><span class="donut" aria-hidden="true"><img class="donut-img" src="https://www.svgrepo.com/show/505199/donut.svg" alt=""></span><span>$10M+ revenue: definitely visit</span></div>
+          <div class="legend"><span aria-hidden="true">🔥</span><span>Warm connection on file</span></div>
+          <div class="legend"><span aria-hidden="true">🎪</span><span>Attending a tracked conference</span></div>
+        </div>
+      </section>
+
+      <section class="carousel-panel glass-panel">
+        <div class="carousel-head">
+          <h2 id="list-title">Companies</h2>
+          <p id="list-meta" class="list-meta">Loading companies...</p>
+        </div>
+        <div class="carousel-viewport" id="carousel-viewport">
+          <div id="list"></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="search-panel glass-panel">
+      <div class="search-top-row">
         <div class="search-row">
           <input id="search" type="search" placeholder="Search companies">
           <button id="reset" type="button">Reset</button>
         </div>
+        <div class="stat-cards">
+          <div class="stat-card"><strong id="state-count">0</strong><span>states</span></div>
+          <div class="stat-card"><strong id="company-count">0</strong><span>companies</span></div>
+        </div>
       </div>
-      <section class="status">
-        <div class="metric">
-          <strong id="state-count">0</strong>
-          <span>states with data</span>
-        </div>
-        <div class="metric">
-          <strong id="company-count">0</strong>
-          <span>companies mapped</span>
-        </div>
-        <div class="legend"><span class="donut" aria-hidden="true"><img class="donut-img" src="https://www.svgrepo.com/show/505199/donut.svg" alt=""></span><span>$10M+ annual revenue: definitely visit</span></div>
-        <div class="legend"><span aria-hidden="true">🔥</span><span>Warm connection at this company</span></div>
-        <div class="legend"><span aria-hidden="true">🎪</span><span>Attending a tracked conference</span></div>
-      </section>
-      <section class="list">
-        <h2 id="list-title">Companies</h2>
-        <p id="list-meta" class="list-meta">Loading companies...</p>
-        <div id="list"></div>
-      </section>
-    </aside>
-
-    <main class="map-wrap">
-      <div id="map" aria-label="Interactive company map"></div>
-      <aside id="details" class="details" aria-live="polite">
-        <header>
-          <h2 id="detail-name">Select a company</h2>
-          <button class="close" id="close-details" type="button" aria-label="Close">x</button>
-        </header>
-        <div id="detail-body" class="empty">Company details will appear here.</div>
-      </aside>
-    </main>
+      <p id="context">Select filters to narrow the map.</p>
+    </section>
   </div>
 
   <button id="chat-toggle" class="chat-toggle" type="button" aria-expanded="false" aria-controls="chat-panel">
@@ -834,7 +932,8 @@
       NH: [43.7, -71.6], RI: [41.7, -71.5], DE: [39.0, -75.5], DC: [38.9, -77.0]
     };
 
-    const map = L.map("map", { zoomControl: true }).setView([39.8, -98.6], 4);
+    const map = L.map("map", { zoomControl: false }).setView([39.8, -98.6], 4);
+    L.control.zoom({ position: "bottomright" }).addTo(map);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
       attribution: "&copy; OpenStreetMap contributors"
@@ -854,6 +953,7 @@
     const details = document.querySelector("#details");
     const detailName = document.querySelector("#detail-name");
     const detailBody = document.querySelector("#detail-body");
+    const carouselViewport = document.querySelector("#carousel-viewport");
 
     let data = { states: [], cities: [], companies: [] };
     let geoJsonLayer = null;
@@ -1104,6 +1204,10 @@
       listMeta.textContent = `${companies.length} companies shown${visitTargets ? `, ${visitTargets} definitely visit` : ""}.`;
       if (!companies.length) {
         list.innerHTML = `<p class="empty">No companies match these filters.</p>`;
+        if (carouselRaf) {
+          cancelAnimationFrame(carouselRaf);
+          carouselRaf = null;
+        }
         return;
       }
       companies.forEach(company => addListButton(
@@ -1116,7 +1220,56 @@
         company.has_warm_connection,
         company.has_conference
       ));
+      setupCarouselLoop();
     }
+
+    // --- Vertical carousel: slow auto-scroll loop, pauses on hover, still
+    // wheel-scrollable manually since it's a real overflow:auto container. ---
+    let carouselRaf = null;
+    let carouselPaused = false;
+    let carouselLoopHeight = 0;
+
+    function setupCarouselLoop() {
+      if (carouselRaf) {
+        cancelAnimationFrame(carouselRaf);
+        carouselRaf = null;
+      }
+      const originalChildren = Array.from(list.children);
+      carouselLoopHeight = list.scrollHeight;
+      const viewportHeight = carouselViewport.clientHeight;
+      carouselViewport.scrollTop = 0;
+      if (!originalChildren.length || carouselLoopHeight <= viewportHeight) {
+        return;
+      }
+      originalChildren.forEach(node => list.appendChild(node.cloneNode(true)));
+      list.querySelectorAll("button").forEach((button, index) => {
+        if (index >= originalChildren.length) {
+          const source = originalChildren[index - originalChildren.length];
+          const sourceIndex = originalChildren.indexOf(source);
+          button.addEventListener("click", () => originalChildren[sourceIndex]?.click());
+        }
+      });
+      let last = null;
+      const speed = 18; // px per second
+      function step(timestamp) {
+        if (last === null) last = timestamp;
+        // Clamp dt so a backgrounded/throttled tab doesn't produce one huge
+        // jump when requestAnimationFrame resumes after being suspended.
+        const dt = Math.min((timestamp - last) / 1000, 0.1);
+        last = timestamp;
+        if (!carouselPaused) {
+          carouselViewport.scrollTop += speed * dt;
+          if (carouselViewport.scrollTop >= carouselLoopHeight) {
+            carouselViewport.scrollTop -= carouselLoopHeight;
+          }
+        }
+        carouselRaf = requestAnimationFrame(step);
+      }
+      carouselRaf = requestAnimationFrame(step);
+    }
+
+    carouselViewport.addEventListener("mouseenter", () => { carouselPaused = true; });
+    carouselViewport.addEventListener("mouseleave", () => { carouselPaused = false; });
 
     function addListButton(label, count, action, highRevenue = false, hasWarmConnection = false, hasConference = false) {
       const button = document.createElement("button");
