@@ -5,6 +5,8 @@ from datetime import datetime
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, render
 
+from companymap.models import Company
+
 from .models import Conference, ConferenceCompany, Session
 
 DEFAULT_DURATION_MINUTES = 45
@@ -66,7 +68,7 @@ def _layout_day(sessions_with_times):
 def conference_detail(request, slug):
     conference = get_object_or_404(Conference, slug=slug)
 
-    companies = conference.companies.all().order_by("name")
+    companies = conference.companies.select_related("company").all().order_by("name")
     tag_counts = Counter()
     for company in companies:
         for tag in company.tags:
@@ -76,9 +78,25 @@ def conference_detail(request, slug):
         {"value": value, "label": tag_labels.get(value, value), "count": count}
         for value, count in sorted(tag_counts.items(), key=lambda kv: -kv[1])
     ]
+    synthego_labels = dict(Company.SynthegoRelation.choices)
     for company in companies:
         company.data_tags = "|".join(company.tags)
         company.tag_badges = [{"value": t, "label": tag_labels.get(t, t)} for t in company.tags]
+
+        info_badges = []
+        mapped = company.company
+        if mapped:
+            if mapped.segment:
+                info_badges.append({"kind": "segment", "label": mapped.segment})
+            if mapped.synthego_relation and mapped.synthego_relation != Company.SynthegoRelation.NO_RELATION:
+                info_badges.append(
+                    {"kind": "synthego_" + mapped.synthego_relation, "label": synthego_labels[mapped.synthego_relation]}
+                )
+            if mapped.has_marketing_presales_team:
+                info_badges.append({"kind": "presales", "label": "Marketing/Presales"})
+            if mapped.has_data_bi_team:
+                info_badges.append({"kind": "data_bi", "label": "Data/BI"})
+        company.info_badges = info_badges
 
     sessions = list(conference.sessions.all().order_by("day", "start_time", "id"))
     for session in sessions:

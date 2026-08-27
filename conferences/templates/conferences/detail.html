@@ -13,6 +13,19 @@
   .tag-exhibitor { background: color-mix(in srgb, var(--s4) 25%, var(--surface)); color: var(--s4); }
   .tag-networking_session { background: color-mix(in srgb, var(--s3) 20%, var(--surface)); color: var(--s3); }
 
+  .info-badge {
+    display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+    font-weight: 600; letter-spacing: .02em; padding: 3px 8px; border-radius: 5px;
+    white-space: nowrap; margin: 0 4px 4px 0; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--ink-2);
+  }
+  .info-segment { background: var(--surface-2); color: var(--ink-2); }
+  .info-presales { background: color-mix(in srgb, var(--s6) 18%, var(--surface)); color: var(--s6); border-color: var(--s6); }
+  .info-data_bi { background: color-mix(in srgb, var(--s7) 18%, var(--surface)); color: var(--s7); border-color: var(--s7); }
+  .info-synthego_competitor { background: color-mix(in srgb, var(--s2) 20%, var(--surface)); color: var(--s2); border-color: var(--s2); }
+  .info-synthego_adjacent { background: color-mix(in srgb, var(--s4) 20%, var(--surface)); color: var(--s4); border-color: var(--s4); }
+  .info-synthego_partner { background: color-mix(in srgb, var(--s3) 20%, var(--surface)); color: var(--s3); border-color: var(--s3); }
+
   .tabbar { display: flex; gap: 8px; margin: 24px 0 0; border-bottom: 1px solid var(--border); }
   .tab-btn {
     font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-weight: 600;
@@ -155,6 +168,11 @@
             {% if company.tag_badges %}
               <div>
                 {% for badge in company.tag_badges %}<span class="tag-badge tag-{{ badge.value }}">{{ badge.label }}</span>{% endfor %}
+              </div>
+            {% endif %}
+            {% if company.info_badges %}
+              <div>
+                {% for badge in company.info_badges %}<span class="info-badge info-{{ badge.kind }}">{{ badge.label }}</span>{% endfor %}
               </div>
             {% endif %}
             {% if company.booth %}<div class="booth">Booth {{ company.booth }}</div>{% endif %}
