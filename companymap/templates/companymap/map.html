@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -95,6 +96,17 @@
       flex-direction: column;
       gap: 10px;
     }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-mark {
+      width: 26px;
+      height: 26px;
+      flex: none;
+    }
+    .brand-text { min-width: 0; }
     .brand h1 {
       margin: 0 0 1px;
       font-family: "Source Serif 4", Georgia, serif;
@@ -107,6 +119,30 @@
       color: var(--ink-2);
       line-height: 1.35;
       font-size: .68rem;
+    }
+    /* ---- branded page/data loader ---- */
+    .lt-loader {
+      position: fixed; inset: 0; z-index: 5000;
+      display: flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--page) 82%, transparent);
+      backdrop-filter: blur(4px);
+      transition: opacity .18s ease;
+    }
+    .lt-loader.lt-hidden { opacity: 0; pointer-events: none; }
+    .lt-loader-box {
+      width: 68px; height: 68px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.25);
+    }
+    .lt-loader img {
+      width: 40px; height: 40px;
+      animation: lt-pulse 1.3s ease-in-out infinite;
+    }
+    @keyframes lt-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(.82); opacity: .55; }
     }
     .filters {
       display: grid;
@@ -799,6 +835,11 @@
   </style>
 </head>
 <body>
+  <div id="lt-loader" class="lt-loader" aria-hidden="true">
+    <div class="lt-loader-box">
+      <img src="{% static 'branding/lunartree-icon.png' %}" alt="Loading">
+    </div>
+  </div>
   <a class="universe-link conference-link" href="{% url 'conferences:home' %}" aria-label="Conference Intel">
     <span class="universe-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -835,8 +876,11 @@
     <div class="left-stack">
       <section class="filters-panel glass-panel">
         <div class="brand">
-          <h1>Company Map</h1>
-          <p>Donut markers are visit targets.</p>
+          <img class="brand-mark" src="{% static 'branding/lunartree-icon.png' %}" alt="">
+          <div class="brand-text">
+            <h1>Company Map</h1>
+            <p>Donut markers are visit targets.</p>
+          </div>
         </div>
         <div class="filters">
           <div class="filter-field">
@@ -1473,7 +1517,25 @@
           const target = data.companies.find(company => String(company.id) === focusId);
           if (target) focusCompany(target);
         }
+      })
+      .finally(() => {
+        const loader = document.getElementById("lt-loader");
+        if (loader) loader.classList.add("lt-hidden");
       });
+
+    (function () {
+      const loader = document.getElementById("lt-loader");
+      if (!loader) return;
+      document.addEventListener("click", event => {
+        const link = event.target.closest("a[href]");
+        if (!link) return;
+        const url = link.getAttribute("href") || "";
+        if (link.target === "_blank" || link.hasAttribute("download")) return;
+        if (/^(https?:)?\/\//.test(url) && link.hostname !== window.location.hostname) return;
+        if (url.startsWith("#") || url.startsWith("mailto:") || url.startsWith("tel:")) return;
+        loader.classList.remove("lt-hidden");
+      });
+    })();
 
     const chatToggle = document.querySelector("#chat-toggle");
     const chatPanel = document.querySelector("#chat-panel");

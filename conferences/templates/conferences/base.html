@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -55,12 +56,39 @@
       padding: 20px 0; border-bottom: 1px solid var(--border);
     }
     .topnav .brand {
+      display: inline-flex; align-items: center; gap: 8px;
       font-family: "IBM Plex Mono", monospace; font-size: 12px;
       letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
       text-decoration: none;
     }
     .topnav .brand strong { color: var(--ink); }
+    .topnav .brand-mark { width: 22px; height: 22px; flex: none; }
     .topnav nav { display: flex; gap: 8px; }
+
+    /* ---- branded page loader ---- */
+    .lt-loader {
+      position: fixed; inset: 0; z-index: 5000;
+      display: flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--page) 82%, transparent);
+      backdrop-filter: blur(4px);
+      transition: opacity .18s ease;
+    }
+    .lt-loader.lt-hidden { opacity: 0; pointer-events: none; }
+    .lt-loader-box {
+      width: 68px; height: 68px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.25);
+    }
+    .lt-loader img {
+      width: 40px; height: 40px;
+      animation: lt-pulse 1.3s ease-in-out infinite;
+    }
+    @keyframes lt-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(.82); opacity: .55; }
+    }
     .chip {
       display: inline-flex; align-items: center; gap: 7px;
       border: 1px solid var(--border); border-radius: 999px;
@@ -125,9 +153,17 @@
   </style>
 </head>
 <body>
+  <div id="lt-loader" class="lt-loader" aria-hidden="true">
+    <div class="lt-loader-box">
+      <img src="{% static 'branding/lunartree-icon.png' %}" alt="Loading">
+    </div>
+  </div>
   <div class="wrap">
     <div class="topnav">
-      <a class="brand" href="{% url 'conferences:home' %}"><strong>Conferences</strong></a>
+      <a class="brand" href="{% url 'conferences:home' %}">
+        <img class="brand-mark" src="{% static 'branding/lunartree-icon.png' %}" alt="">
+        <strong>Conferences</strong>
+      </a>
       <nav>
         <a class="chip" href="{% url 'conferences:home' %}">All Conferences</a>
         <a class="chip" href="{% url 'contactdb:home' %}">ContactDB</a>
@@ -136,6 +172,25 @@
     </div>
     {% block content %}{% endblock %}
   </div>
+  <script>
+    (function () {
+      var loader = document.getElementById("lt-loader");
+      if (!loader) return;
+      window.addEventListener("load", function () { loader.classList.add("lt-hidden"); });
+      document.addEventListener("click", function (event) {
+        var link = event.target.closest("a[href]");
+        if (!link) return;
+        var url = link.getAttribute("href") || "";
+        if (link.target === "_blank" || link.hasAttribute("download")) return;
+        if (/^(https?:)?\/\//.test(url) && link.hostname !== window.location.hostname) return;
+        if (url.startsWith("#") || url.startsWith("mailto:") || url.startsWith("tel:")) return;
+        loader.classList.remove("lt-hidden");
+      });
+      document.addEventListener("submit", function () {
+        loader.classList.remove("lt-hidden");
+      });
+    })();
+  </script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>
