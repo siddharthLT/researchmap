@@ -104,7 +104,11 @@ if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
             DATABASE_URL,
-            conn_max_age=0,
+            # 0 (default) is correct for Vercel's stateless serverless functions.
+            # Locally, manage.py runserver is one long-lived process, so reusing
+            # the connection avoids paying Neon's connect/TLS handshake cost on
+            # every single request. Set DB_CONN_MAX_AGE=60 in your local .env.
+            conn_max_age=int(os.environ.get("DB_CONN_MAX_AGE", 0)),
             conn_health_checks=True,
             ssl_require=True,
         )
