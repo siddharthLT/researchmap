@@ -152,4 +152,36 @@ class DecisionMaker(models.Model):
             "linkedin_url": self.linkedin_url,
         }
 
+
+class CompanyLinkedInPost(models.Model):
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="linkedin_posts",
+    )
+
+    linkedin_company_id = models.CharField(max_length=255, blank=True)
+
+    post_url = models.URLField(max_length=1000, unique=True)
+    post_text = models.TextField(blank=True)
+    post_date = models.DateTimeField(null=True, blank=True)
+
+    raw_payload = models.JSONField(default=dict, blank=True)
+
+    is_saved = models.BooleanField(default=False)
+
+    fetched_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-post_date"]
+        indexes = [
+            models.Index(fields=["company", "-post_date"]),
+            models.Index(fields=["-post_date"]),
+            models.Index(fields=["is_saved"]),
+        ]
+
+    def __str__(self):
+        return f"{self.company.name} - {self.post_date or 'No date'}"
+
 # Create your models here.

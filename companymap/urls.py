@@ -10,4 +10,6 @@ urlpatterns = [
     path("api/companies/", views.company_map_data, name="company_map_data"),
     path("api/chat/", views.chat_api, name="chat_api"),
     path("company/<int:company_id>/pin/", views.company_pin_map, name="company_pin_map"),
+    path("social-room/", views.social_room, name="social_room"),
+    path("social-room/save/<int:post_id>/", views.social_room_toggle_save, name="social_room_toggle_save"),
 ]

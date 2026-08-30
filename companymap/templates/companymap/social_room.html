@@ -1,0 +1,522 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Social Room</title>
+  <script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}p||((p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",p.onerror=function(){p=null},(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r));var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="No qo jo init ol ll nl sl vl wa al fl el capture getExtension ul Do calculateEventProperties bl register register_once register_for_session unregister unregister_for_session xl rl wl getFeatureFlag getFeatureFlagPayload getFeatureFlagResult getAllFeatureFlags isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync Cl identify setPersonProperties unsetPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset Tl shutdown setIdentity clearIdentity get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException addExceptionStep captureLog startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty kl ml createPersonProfile setInternalOrTestUser Sl Bo Ho opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing pl debug ka En getPageViewId captureTraceFeedback captureTraceMetric Ko".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_thfJAqnyFFTSrsmaeXmCearK4ieqgh9gGTVR5HzDJp6c', {
+        api_host: 'https://us.i.posthog.com',
+        defaults: '2026-05-30',
+        person_profiles: 'identified_only', // or 'always' to create profiles for anonymous users as well
+    })
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#eef0ee;
+      --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+      --grid:#e1e0d9; --border:rgba(11,11,11,0.10);
+      --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+      --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+        --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+        --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+        --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+        --s5:#d55181; --s6:#008300; --s7:#9085e9;
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+      --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --s5:#d55181; --s6:#008300; --s7:#9085e9;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: var(--page);
+      color: var(--ink);
+      font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding-bottom: 84px; /* keep content clear of the fixed ticker */
+    }
+    a { color: var(--s1); }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    .lt-loader {
+      position: fixed; inset: 0; z-index: 5000;
+      display: flex; align-items: center; justify-content: center;
+      background: color-mix(in srgb, var(--page) 82%, transparent);
+      backdrop-filter: blur(4px);
+      transition: opacity .18s ease;
+    }
+    .lt-loader.lt-hidden { opacity: 0; pointer-events: none; }
+    .lt-loader-box {
+      width: 68px; height: 68px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.25);
+    }
+    .lt-loader img { width: 40px; height: 40px; animation: lt-pulse 1.3s ease-in-out infinite; }
+    @keyframes lt-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.82); opacity: .55; } }
+
+    .topnav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0; border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: "IBM Plex Mono", monospace; font-size: 12px;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+      text-decoration: none;
+    }
+    .brand strong { color: var(--ink); }
+    .brand-mark { width: 22px; height: 22px; flex: none; }
+    .topnav nav { display: flex; gap: 8px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 6px 12px 6px 10px; font-size: 12.5px; color: var(--ink-2);
+      text-decoration: none; background: var(--surface); cursor: pointer;
+    }
+    .chip:hover { border-color: var(--s1); color: var(--s1); text-decoration: none; }
+
+    .masthead { padding: 32px 0 24px; }
+    .eyebrow {
+      font-family: "IBM Plex Mono", monospace; font-size: 12px;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+    }
+    h1 {
+      font-family: "Source Serif 4", Georgia, serif; font-weight: 600;
+      font-size: 2.1rem; margin: 6px 0 8px; letter-spacing: 0;
+    }
+    .lede { color: var(--ink-2); max-width: 640px; line-height: 1.5; margin: 0 0 6px; }
+    .meta-line { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 28px;
+      padding: 24px 0 48px;
+    }
+    .filters-panel {
+      display: flex; flex-direction: column; gap: 16px;
+      position: sticky; top: 24px; align-self: start;
+    }
+    .filter-field { display: grid; gap: 6px; }
+    .filter-field label {
+      font-family: "IBM Plex Mono", monospace; color: var(--muted);
+      font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em;
+    }
+    input, select, button {
+      min-height: 38px; border-radius: 8px; border: 1px solid var(--border);
+      font: inherit; background: var(--surface); color: var(--ink);
+    }
+    input, select { width: 100%; padding: 0 10px; font-size: .86rem; }
+    select {
+      appearance: none;
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: calc(100% - 16px) 16px, calc(100% - 10px) 16px;
+      background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 28px;
+    }
+    input:hover, select:hover { border-color: var(--s1); }
+    .filter-actions { display: flex; gap: 8px; }
+    .btn {
+      padding: 0 14px; cursor: pointer; font-weight: 650; font-size: .84rem;
+    }
+    .btn-primary { background: var(--ink); color: var(--page); border-color: var(--ink); }
+    .btn-secondary { background: var(--surface); color: var(--ink-2); }
+    .btn-secondary:hover { border-color: var(--s1); color: var(--s1); }
+
+    .room-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+    .room-tab {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--ink-2); text-decoration: none;
+      font-size: .84rem; font-weight: 600;
+    }
+    .room-tab:hover { border-color: var(--s1); color: var(--s1); text-decoration: none; }
+    .room-tab.active { background: var(--ink); color: var(--page); border-color: var(--ink); }
+    .room-tab .tab-count { font-family: "IBM Plex Mono", monospace; font-size: .74rem; opacity: .75; }
+
+    .posts-header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+    }
+    .posts-count { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted); }
+
+    .post-list { display: grid; gap: 12px; }
+    .post-card {
+      border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+      padding: 16px 18px;
+    }
+    .post-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .post-company-block { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .company-logo {
+      width: 34px; height: 34px; border-radius: 7px; object-fit: contain;
+      background: #fff; border: 1px solid var(--border); flex: none; padding: 3px;
+    }
+    .company-logo-fallback {
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface-2); color: var(--muted); font-weight: 700; font-size: .95rem;
+      text-transform: uppercase;
+    }
+    .post-company-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .post-company { font-weight: 650; font-size: .98rem; }
+    .post-company a { color: var(--ink); text-decoration: none; }
+    .post-company a:hover { color: var(--s1); }
+    .post-location { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); }
+    .post-card-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+    .date-pill {
+      font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-2);
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px;
+      padding: 4px 11px; white-space: nowrap;
+    }
+    .save-btn {
+      width: 30px; height: 30px; min-height: auto; padding: 0; flex: none;
+      border-radius: 8px; border: 1px solid var(--border); background: var(--surface);
+      color: var(--ink-2); display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .save-btn:hover { border-color: var(--s4); color: var(--s4); }
+    .save-btn.saved { background: color-mix(in srgb, var(--s4) 22%, var(--surface)); border-color: var(--s4); color: var(--s4); }
+    .post-text { line-height: 1.5; font-size: .92rem; color: var(--ink-2); margin: 0 0 12px; white-space: pre-wrap; }
+    .linkedin-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 14px; border-radius: 8px;
+      background: var(--s1); color: #fff; border: 1px solid var(--s1);
+      font-size: .8rem; font-weight: 650; text-decoration: none;
+    }
+    .linkedin-btn:hover { background: color-mix(in srgb, var(--s1) 82%, black); text-decoration: none; color: #fff; }
+    .empty-state { color: var(--muted); padding: 40px 0; text-align: center; }
+
+    .pagination {
+      display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;
+      margin-top: 24px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+    }
+    .pagination a, .pagination span {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+      text-decoration: none; color: var(--ink-2); padding: 0 10px;
+    }
+    .pagination a:hover { border-color: var(--s1); color: var(--s1); }
+    .pagination .current { background: var(--ink); color: var(--page); border-color: var(--ink); font-weight: 700; }
+    .pagination .disabled { color: var(--muted); opacity: .45; }
+    .pagination .ellipsis { border: 0; min-width: auto; padding: 0 2px; color: var(--muted); }
+
+    /* ---- bottom ticker: horizontal auto-scroll marquee of latest posts ---- */
+    /* Fixed (non-theme) dark colors on purpose: this bar should always read
+       as a dark ticker tape, regardless of the page's light/dark mode. */
+    .ticker-bar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 900;
+      background: #0b0b0b; color: #f9f9f7;
+      border-top: 1px solid rgba(255,255,255,0.12);
+      height: 44px;
+      overflow: hidden;
+    }
+    .ticker-bar::before, .ticker-bar::after {
+      content: ""; position: absolute; top: 0; bottom: 0; width: 60px; z-index: 2; pointer-events: none;
+    }
+    .ticker-bar::before { left: 0; background: linear-gradient(to right, #0b0b0b, transparent); }
+    .ticker-bar::after { right: 0; background: linear-gradient(to left, #0b0b0b, transparent); }
+    .ticker-viewport {
+      height: 100%; overflow-x: auto; overflow-y: hidden;
+      scrollbar-width: none; -ms-overflow-style: none;
+      display: flex; align-items: center;
+    }
+    .ticker-viewport::-webkit-scrollbar { display: none; height: 0; }
+    .ticker-track { display: flex; align-items: center; gap: 36px; padding: 0 30px; white-space: nowrap; }
+    .ticker-item { font-size: .82rem; white-space: nowrap; }
+    .ticker-item strong { color: #4ade9c; }
+    .ticker-item .tdate { color: rgba(249,249,247,0.55); margin: 0 6px; }
+    .ticker-item .tquote { color: rgba(249,249,247,0.88); }
+    .ticker-empty { padding: 0 30px; font-size: .82rem; color: var(--muted); }
+
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .filters-panel { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div id="lt-loader" class="lt-loader" aria-hidden="true">
+    <div class="lt-loader-box">
+      <img src="{% static 'branding/lunartree-icon.png' %}" alt="Loading">
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="topnav">
+      <a class="brand" href="{% url 'companymap:map' %}">
+        <img class="brand-mark" src="{% static 'branding/lunartree-icon.png' %}" alt="">
+        <strong>Social Room</strong>
+      </a>
+      <nav>
+        <a class="chip" href="{% url 'companymap:map' %}">Company Map</a>
+        <a class="chip" href="{% url 'contactdb:home' %}">ContactDB</a>
+        <a class="chip" href="{% url 'conferences:home' %}">Conferences</a>
+      </nav>
+    </div>
+
+    <header class="masthead">
+      <p class="eyebrow">Social Room</p>
+      <h1>Company LinkedIn activity</h1>
+      <p class="lede">Recent LinkedIn posts pulled from every company page we track, sorted by date. Filter by company, geography, or segment on the left.</p>
+      <p class="meta-line">{{ total_posts }} posts on file</p>
+    </header>
+
+    <div class="layout">
+      <aside class="filters-panel">
+        <form method="get" id="filter-form">
+          {% csrf_token %}
+          <div class="filter-field">
+            <label for="q">Search</label>
+            <input type="search" id="q" name="q" placeholder="Search posts or companies" value="{{ q }}">
+          </div>
+          <div class="filter-field">
+            <label for="company">Company</label>
+            <select id="company" name="company">
+              <option value="">All companies</option>
+              {% for c in company_options %}
+                <option value="{{ c.id }}" {% if selected_company == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-field">
+            <label for="state">Geography</label>
+            <select id="state" name="state">
+              <option value="">All states</option>
+              {% for s in state_options %}
+                <option value="{{ s }}" {% if selected_state == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-field">
+            <label for="segment">Segment</label>
+            <select id="segment" name="segment">
+              <option value="">All segments</option>
+              {% for seg in segment_options %}
+                <option value="{{ seg }}" {% if selected_segment == seg %}selected{% endif %}>{{ seg }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a class="btn btn-secondary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;" href="{% url 'companymap:social_room' %}">Reset</a>
+          </div>
+        </form>
+      </aside>
+
+      <main>
+        <div class="room-tabs">
+          <a class="room-tab {% if not view %}active{% endif %}" href="{% url 'companymap:social_room' %}{% if querystring_no_view %}?{{ querystring_no_view }}{% endif %}">All Posts</a>
+          <a class="room-tab {% if view == 'saved' %}active{% endif %}" href="{% url 'companymap:social_room' %}?{% if querystring_no_view %}{{ querystring_no_view }}&{% endif %}view=saved">Saved <span class="tab-count">{{ saved_count }}</span></a>
+        </div>
+
+        <div class="posts-header">
+          <span class="posts-count">{{ page.paginator.count }} post{{ page.paginator.count|pluralize }} matching filters</span>
+          <span class="posts-count">Page {{ page.number }} of {{ page.paginator.num_pages|default:1 }}</span>
+        </div>
+
+        {% if page.object_list %}
+          <div class="post-list" id="post-list">
+            {% for post in page.object_list %}
+              <article class="post-card" data-post-id="{{ post.id }}">
+                <div class="post-card-head">
+                  <div class="post-company-block">
+                    {% if post.company.logo_url %}
+                      <img class="company-logo" src="{{ post.company.logo_url }}" alt="" loading="lazy" onerror="this.classList.add('company-logo-fallback');this.removeAttribute('src');this.textContent='{{ post.company.name|slice:':1'|escapejs }}';">
+                    {% else %}
+                      <span class="company-logo company-logo-fallback">{{ post.company.name|slice:":1" }}</span>
+                    {% endif %}
+                    <div class="post-company-text">
+                      <span class="post-company">
+                        {% if post.company.linkedin_url %}
+                          <a href="{{ post.company.linkedin_url }}" target="_blank" rel="noreferrer">{{ post.company.name }}</a>
+                        {% else %}
+                          {{ post.company.name }}
+                        {% endif %}
+                      </span>
+                      {% if post.company.city %}<span class="post-location">{{ post.company.city }}{% if post.company.state_code %}, {{ post.company.state_code }}{% endif %}</span>{% endif %}
+                    </div>
+                  </div>
+                  <div class="post-card-actions">
+                    <span class="date-pill">{% if post.post_date %}{{ post.post_date|date:"M j, Y" }}{% else %}Undated{% endif %}</span>
+                    <button type="button" class="save-btn {% if post.is_saved %}saved{% endif %}" data-post-id="{{ post.id }}" aria-label="Save post" title="Save post">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="{% if post.is_saved %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <p class="post-text">{{ post.post_text|default:"(no text)" }}</p>
+                {% if post.post_url %}
+                  <a class="linkedin-btn" href="{{ post.post_url }}" target="_blank" rel="noreferrer">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                    View on LinkedIn
+                  </a>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+
+          <div class="pagination">
+            {% if page.has_previous %}
+              <a href="?{{ querystring }}&page={{ page.previous_page_number }}">&larr; Prev</a>
+            {% else %}
+              <span class="disabled">&larr; Prev</span>
+            {% endif %}
+            {% for p in page_range %}
+              {% if p.is_ellipsis %}
+                <span class="ellipsis">&hellip;</span>
+              {% elif p.is_current %}
+                <span class="current">{{ p.number }}</span>
+              {% else %}
+                <a href="?{{ querystring }}&page={{ p.number }}">{{ p.number }}</a>
+              {% endif %}
+            {% endfor %}
+            {% if page.has_next %}
+              <a href="?{{ querystring }}&page={{ page.next_page_number }}">Next &rarr;</a>
+            {% else %}
+              <span class="disabled">Next &rarr;</span>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="empty-state">{% if view == 'saved' %}Nothing Saved yet.{% else %}No posts match these filters yet.{% endif %}</div>
+        {% endif %}
+      </main>
+    </div>
+  </div>
+
+  <div class="ticker-bar" aria-label="Latest posts ticker">
+    <div class="ticker-viewport" id="ticker-viewport">
+      <div class="ticker-track" id="ticker-track">
+        {% for post in ticker_posts %}
+          <span class="ticker-item">
+            <strong>{{ post.company.name }}</strong>
+            <span class="tdate">posted on {% if post.post_date %}{{ post.post_date|date:"M j, Y" }}{% else %}an unknown date{% endif %},</span>
+            <span class="tquote">&ldquo;{{ post.post_text|truncatechars:140 }}&rdquo;</span>
+          </span>
+        {% empty %}
+          <span class="ticker-empty">No posts pulled yet.</span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var loader = document.getElementById("lt-loader");
+      if (!loader) return;
+      window.addEventListener("load", function () { loader.classList.add("lt-hidden"); });
+      document.addEventListener("click", function (event) {
+        var link = event.target.closest("a[href]");
+        if (!link) return;
+        var url = link.getAttribute("href") || "";
+        if (link.target === "_blank" || link.hasAttribute("download")) return;
+        if (/^(https?:)?\/\//.test(url) && link.hostname !== window.location.hostname) return;
+        if (url.startsWith("#") || url.startsWith("mailto:") || url.startsWith("tel:")) return;
+        loader.classList.remove("lt-hidden");
+      });
+      document.addEventListener("submit", function () {
+        loader.classList.remove("lt-hidden");
+      });
+    })();
+
+    // Auto-submit filter selects on change for convenience.
+    document.querySelectorAll("#filter-form select").forEach(function (el) {
+      el.addEventListener("change", function () { document.getElementById("filter-form").submit(); });
+    });
+
+    // Save / unsave a post. Backed by the DB (CompanyLinkedInPost.is_saved),
+    // not localStorage, so it's correct regardless of which page a post is on.
+    (function () {
+      var csrfInput = document.querySelector("#filter-form [name=csrfmiddlewaretoken]");
+      var csrfToken = csrfInput ? csrfInput.value : "";
+      var onSavedTab = new URLSearchParams(window.location.search).get("view") === "saved";
+      var saveUrlBase = "{% url 'companymap:social_room_toggle_save' 1 %}".replace(/1\/$/, "");
+      var tabCount = document.querySelector(".room-tab .tab-count");
+
+      document.querySelectorAll(".save-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var postId = btn.dataset.postId;
+          btn.disabled = true;
+          fetch(saveUrlBase + postId + "/", {
+            method: "POST",
+            headers: { "X-CSRFToken": csrfToken },
+          })
+            .then(function (response) { return response.json(); })
+            .then(function (data) {
+              btn.disabled = false;
+              btn.classList.toggle("saved", data.saved);
+              var svg = btn.querySelector("svg");
+              svg.setAttribute("fill", data.saved ? "currentColor" : "none");
+              if (tabCount) {
+                var current = parseInt(tabCount.textContent, 10) || 0;
+                tabCount.textContent = data.saved ? current + 1 : Math.max(0, current - 1);
+              }
+              if (onSavedTab && !data.saved) {
+                var card = btn.closest(".post-card");
+                if (card) card.remove();
+              }
+            })
+            .catch(function () { btn.disabled = false; });
+        });
+      });
+    })();
+
+    // Horizontal ticker: slow auto-scroll loop, pauses on hover, still
+    // wheel/drag-scrollable manually since it's a real overflow:auto strip.
+    (function () {
+      var viewport = document.getElementById("ticker-viewport");
+      var track = document.getElementById("ticker-track");
+      if (!viewport || !track || !track.children.length) return;
+
+      var originalChildren = Array.from(track.children);
+      var loopWidth = track.scrollWidth;
+      var viewportWidth = viewport.clientWidth;
+      if (loopWidth <= viewportWidth) return;
+
+      originalChildren.forEach(function (node) { track.appendChild(node.cloneNode(true)); });
+
+      var paused = false;
+      viewport.addEventListener("mouseenter", function () { paused = true; });
+      viewport.addEventListener("mouseleave", function () { paused = false; });
+
+      var last = null;
+      var speed = 40; // px per second
+      function step(timestamp) {
+        if (last === null) last = timestamp;
+        var dt = Math.min((timestamp - last) / 1000, 0.1);
+        last = timestamp;
+        if (!paused) {
+          viewport.scrollLeft += speed * dt;
+          if (viewport.scrollLeft >= loopWidth) {
+            viewport.scrollLeft -= loopWidth;
+          }
+        }
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    })();
+  </script>
+</body>
+</html>

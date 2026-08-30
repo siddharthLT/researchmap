@@ -2,7 +2,8 @@ import json
 import logging
 from collections import defaultdict
 
-from django.db.models import Count
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.clickjacking import xframe_options_sameorigin
@@ -12,7 +13,7 @@ from contactdb.models import Person
 from conferences.models import ConferenceCompany
 
 from .ai_chat import run_chat
-from .models import Company
+from .models import Company, CompanyLinkedInPost
 
 logger = logging.getLogger(__name__)
 
@@ -127,5 +128,105 @@ def company_map_data(request):
             "companies": companies_data,
         }
     )
+
+
+def social_room(request):
+    posts = (
+        CompanyLinkedInPost.objects
+        .select_related("company")
+        .exclude(company__isnull=True)
+        .order_by("-post_date", "-created_at")
+    )
+
+    q = request.GET.get("q", "").strip()
+    company_id = request.GET.get("company", "").strip()
+    state_code = request.GET.get("state", "").strip()
+    segment = request.GET.get("segment", "").strip()
+    view = request.GET.get("view", "").strip()
+
+    if q:
+        posts = posts.filter(Q(post_text__icontains=q) | Q(company__name__icontains=q))
+    if company_id:
+        posts = posts.filter(company_id=company_id)
+    if state_code:
+        posts = posts.filter(company__state_code=state_code)
+    if segment:
+        posts = posts.filter(company__segment=segment)
+
+    saved_count = CompanyLinkedInPost.objects.filter(is_saved=True).count()
+    if view == "saved":
+        posts = posts.filter(is_saved=True)
+
+    paginator = Paginator(posts, 30)
+    page_number = request.GET.get("page") or 1
+    page = paginator.get_page(page_number)
+
+    page_range = [
+        {"number": p, "is_ellipsis": p == Paginator.ELLIPSIS, "is_current": p == page.number}
+        for p in paginator.get_elided_page_range(page.number, on_each_side=1, on_ends=1)
+    ]
+
+    company_options = (
+        Company.objects.filter(linkedin_posts__isnull=False)
+        .distinct()
+        .order_by("name")
+        .values("id", "name")
+    )
+    state_options = (
+        Company.objects.filter(linkedin_posts__isnull=False)
+        .exclude(state_code="")
+        .values_list("state_code", flat=True)
+        .distinct()
+        .order_by("state_code")
+    )
+    segment_options = (
+        Company.objects.filter(linkedin_posts__isnull=False)
+        .exclude(segment="")
+        .values_list("segment", flat=True)
+        .distinct()
+        .order_by("segment")
+    )
+
+    ticker_posts = (
+        CompanyLinkedInPost.objects
+        .select_related("company")
+        .exclude(company__isnull=True)
+        .order_by("-post_date", "-created_at")[:100]
+    )
+
+    querystring = request.GET.copy()
+    querystring.pop("page", None)
+    querystring_no_view = querystring.copy()
+    querystring_no_view.pop("view", None)
+
+    return render(
+        request,
+        "companymap/social_room.html",
+        {
+            "page": page,
+            "page_range": page_range,
+            "company_options": company_options,
+            "state_options": state_options,
+            "segment_options": segment_options,
+            "ticker_posts": ticker_posts,
+            "q": q,
+            "selected_company": company_id,
+            "selected_state": state_code,
+            "selected_segment": segment,
+            "view": view,
+            "saved_count": saved_count,
+            "querystring": querystring.urlencode(),
+            "querystring_no_view": querystring_no_view.urlencode(),
+            "total_posts": CompanyLinkedInPost.objects.count(),
+        },
+    )
+
+
+@require_POST
+def social_room_toggle_save(request, post_id):
+    post = get_object_or_404(CompanyLinkedInPost, id=post_id)
+    post.is_saved = not post.is_saved
+    post.save(update_fields=["is_saved"])
+    return JsonResponse({"saved": post.is_saved})
 
 # Create your views here.

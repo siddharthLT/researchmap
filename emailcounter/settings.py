@@ -164,3 +164,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Local RSSHub instance (see docker-compose.rsshub.local.yml) used by
+# `import_linkedin_posts` to pull LinkedIn company-page posts.
+RSSHUB_BASE_URL = os.environ.get("RSSHUB_BASE_URL", "http://127.0.0.1:1201")
