@@ -1,11 +1,13 @@
 import json
 import logging
 from collections import defaultdict
+from datetime import timedelta
 
 from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_POST
 
@@ -187,12 +189,29 @@ def social_room(request):
         .order_by("segment")
     )
 
-    ticker_posts = (
+    # Ticker: top 10 "real news" posts (capability/partnership/funding/research/
+    # hiring/event signals, excludes generic company_update) from the last 14
+    # days. Backfills with older signal posts if fewer than 10 are that recent
+    # (e.g. while classification is still catching up), so it's never sparse.
+    ticker_cutoff = timezone.now() - timedelta(days=14)
+    ticker_posts = list(
         CompanyLinkedInPost.objects
         .select_related("company")
         .exclude(company__isnull=True)
-        .order_by("-post_date", "-created_at")[:100]
+        .filter(category__in=CompanyLinkedInPost.SIGNAL_CATEGORIES, post_date__gte=ticker_cutoff)
+        .order_by("-post_date")[:10]
     )
+    if len(ticker_posts) < 10:
+        have_ids = [p.id for p in ticker_posts]
+        backfill = (
+            CompanyLinkedInPost.objects
+            .select_related("company")
+            .exclude(company__isnull=True)
+            .filter(category__in=CompanyLinkedInPost.SIGNAL_CATEGORIES)
+            .exclude(id__in=have_ids)
+            .order_by("-post_date")[: 10 - len(ticker_posts)]
+        )
+        ticker_posts = ticker_posts + list(backfill)
 
     querystring = request.GET.copy()
     querystring.pop("page", None)

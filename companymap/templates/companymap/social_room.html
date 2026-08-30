@@ -242,9 +242,21 @@
     .ticker-viewport::-webkit-scrollbar { display: none; height: 0; }
     .ticker-track { display: flex; align-items: center; gap: 36px; padding: 0 30px; white-space: nowrap; }
     .ticker-item { font-size: .82rem; white-space: nowrap; }
-    .ticker-item strong { color: #4ade9c; }
+    .ticker-item strong { color: #f9f9f7; }
     .ticker-item .tdate { color: rgba(249,249,247,0.55); margin: 0 6px; }
     .ticker-item .tquote { color: rgba(249,249,247,0.88); }
+    .cat-tag {
+      display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+      padding: 2px 8px; border-radius: 999px; margin-right: 8px; color: #0b0b0b;
+    }
+    .cat-capability_expansion { background: #6fb3f2; }
+    .cat-new_partnership { background: #b3aaf5; }
+    .cat-new_funding { background: #4ade9c; }
+    .cat-research_milestone { background: #f2c14e; }
+    .cat-hiring { background: #f2a3c1; }
+    .cat-event_attendance { background: #f2965f; }
+    .cat-company_update { background: #8a897f; }
     .ticker-empty { padding: 0 30px; font-size: .82rem; color: var(--muted); }
 
     @media (max-width: 860px) {
@@ -356,6 +368,7 @@
                     </div>
                   </div>
                   <div class="post-card-actions">
+                    {% if post.category %}<span class="cat-tag cat-{{ post.category }}">{{ post.get_category_display }}</span>{% endif %}
                     <span class="date-pill">{% if post.post_date %}{{ post.post_date|date:"M j, Y" }}{% else %}Undated{% endif %}</span>
                     <button type="button" class="save-btn {% if post.is_saved %}saved{% endif %}" data-post-id="{{ post.id }}" aria-label="Save post" title="Save post">
                       <svg viewBox="0 0 24 24" width="15" height="15" fill="{% if post.is_saved %}currentColor{% else %}none{% endif %}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -411,9 +424,10 @@
       <div class="ticker-track" id="ticker-track">
         {% for post in ticker_posts %}
           <span class="ticker-item">
+            {% if post.category %}<span class="cat-tag cat-{{ post.category }}">{{ post.get_category_display }}</span>{% endif %}
             <strong>{{ post.company.name }}</strong>
             <span class="tdate">posted on {% if post.post_date %}{{ post.post_date|date:"M j, Y" }}{% else %}an unknown date{% endif %},</span>
-            <span class="tquote">&ldquo;{{ post.post_text|truncatechars:140 }}&rdquo;</span>
+            <span class="tquote">&ldquo;{{ post.ai_headline|default:post.post_text|truncatechars:140 }}&rdquo;</span>
           </span>
         {% empty %}
           <span class="ticker-empty">No posts pulled yet.</span>
