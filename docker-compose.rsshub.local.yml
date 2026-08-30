@@ -1,0 +1,12 @@
+services:
+  rsshub:
+    image: diygod/rsshub:latest
+    container_name: emailcounter-rsshub-local
+    restart: unless-stopped
+    ports:
+      - "1201:1200"
+    environment:
+      NODE_ENV: production
+      CACHE_TYPE: memory
+      CACHE_EXPIRE: 300
+      REQUEST_TIMEOUT: 30000
