@@ -1,4 +1,5 @@
 import json
+import re
 import time
 
 import requests
@@ -12,7 +13,7 @@ from companymap.models import CompanyLinkedInPost
 
 def save_resilient(post, fields):
     """Save a post, tolerating a Neon connection that went stale while this
-    long-running command sat in time.sleep() between Groq calls. On a dropped
+    long-running command sat in time.sleep() between LLM calls. On a dropped
     connection, close it (Django reopens fresh on the next query) and retry
     once rather than letting one blip kill the whole run."""
     try:
@@ -21,8 +22,25 @@ def save_resilient(post, fields):
         connection.close()
         post.save(update_fields=fields)
 
+
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL = "openai/gpt-oss-120b"
+GROQ_MODEL = "openai/gpt-oss-120b"
+
+# NVIDIA NIM (build.nvidia.com) is used as a fallback once Groq's account-wide
+# daily token cap (TPD) is exhausted — Groq's per-minute limit recovers fine,
+# but the on_demand tier's 200k-tokens/day cap can stay pinned for hours.
+NIM_BASE = "https://integrate.api.nvidia.com/v1"
+NIM_URL = f"{NIM_BASE}/chat/completions"
+NIM_MODELS_URL = f"{NIM_BASE}/models"
+# Only used if the live /v1/models lookup below fails — NVIDIA's catalog is
+# renamed/retired over time (the same trap that broke a hardcoded Groq model
+# id earlier), so prefer discovering a live model instead of trusting this.
+# openai/gpt-oss-120b is confirmed working end-to-end on this account (many
+# listed nemotron/llama variants either 404'd as "not found for account" or
+# hung indefinitely despite being listed — NIM's /v1/models catalog is not a
+# reliable guide to what's actually invokable on a given key).
+NIM_FALLBACK_MODEL = "openai/gpt-oss-120b"
+
 BATCH_SIZE = 4
 MAX_TEXT_CHARS = 700
 
@@ -63,17 +81,112 @@ def build_user_prompt(posts):
     return "Classify these posts:\n\n" + "\n\n".join(lines)
 
 
+def extract_json_object(text):
+    """Parse the model's JSON reply, tolerating providers/models that don't
+    honor response_format=json_object and wrap the JSON in prose or markdown
+    fences instead of returning it bare."""
+    text = (text or "").strip()
+    try:
+        return json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        raise ValueError("no JSON object found in model response")
+    return json.loads(match.group(0))
+
+
+def resolve_nim_model(session, api_key, stderr):
+    """Ask NVIDIA NIM which models are currently live rather than trusting a
+    hardcoded id to still exist."""
+    try:
+        resp = session.get(
+            NIM_MODELS_URL, headers={"Authorization": f"Bearer {api_key}"}, timeout=20
+        )
+        resp.raise_for_status()
+        ids = [m["id"] for m in resp.json().get("data", [])]
+    except Exception as error:
+        stderr.write(f"  could not list NVIDIA NIM models ({error}); using fallback model id")
+        return NIM_FALLBACK_MODEL
+
+    # openai/gpt-oss-* is confirmed reliable on this account (see comment on
+    # NIM_FALLBACK_MODEL above) — use it directly if listed, rather than
+    # guessing among the many nemotron/llama variants of unknown availability.
+    for preferred in ("openai/gpt-oss-120b", "openai/gpt-oss-20b"):
+        if preferred in ids:
+            return preferred
+
+    exclude = ("embed", "rerank", "vision", "guard", "safe", "code", "vlm", "moderation")
+    candidates = [
+        m
+        for m in ids
+        if ("instruct" in m.lower() or "chat" in m.lower() or "nemotron" in m.lower())
+        and not any(x in m.lower() for x in exclude)
+    ]
+    for preferred in ("nemotron-super", "nemotron", "llama-3.3", "llama-3.1", "llama-3"):
+        for m in candidates:
+            if preferred in m.lower():
+                return m
+    return candidates[0] if candidates else NIM_FALLBACK_MODEL
+
+
+def call_llm(session, url, headers, payload, label, stdout, stderr, max_attempts=3, max_wait=30):
+    """POST to an OpenAI-compatible chat completions endpoint and return the
+    parsed JSON result, retrying on transient failures and 429s. Falls back
+    to a response_format-less request if the provider rejects json_object
+    mode (returns that as saw_json_mode_error so the caller can stop asking
+    for it on later batches)."""
+    use_json_mode = "response_format" in payload
+    saw_json_mode_error = False
+    for attempt in range(max_attempts):
+        body = dict(payload)
+        if not use_json_mode:
+            body.pop("response_format", None)
+        try:
+            response = session.post(url, headers=headers, json=body, timeout=60)
+            if response.status_code == 429:
+                wait = min(float(response.headers.get("retry-after", 5)), max_wait)
+                stderr.write(f"  {label} attempt {attempt + 1}: 429, waiting {wait:.1f}s")
+                if wait > 0:
+                    time.sleep(wait)
+                continue
+            if response.status_code == 400 and use_json_mode and "response_format" in response.text.lower():
+                stdout.write(f"  {label}: provider rejected response_format=json_object, retrying without it")
+                use_json_mode = False
+                saw_json_mode_error = True
+                continue
+            response.raise_for_status()
+            content = response.json()["choices"][0]["message"]["content"]
+            return extract_json_object(content), saw_json_mode_error
+        except Exception as error:
+            stderr.write(f"  {label} attempt {attempt + 1} failed: {error}")
+            time.sleep(2)
+    return None, saw_json_mode_error
+
+
 class Command(BaseCommand):
-    help = "Classify CompanyLinkedInPost rows into news categories via Groq and write a short AI headline."
+    help = "Classify CompanyLinkedInPost rows into news categories via Groq (with an NVIDIA NIM fallback) and write a short AI headline."
 
     def add_arguments(self, parser):
         parser.add_argument("--limit", type=int, default=None, help="Only process the first N unclassified posts.")
         parser.add_argument("--reclassify", action="store_true", help="Re-run even posts that already have a category.")
 
     def handle(self, *args, **options):
-        api_key = settings.GROQ_API_KEY
-        if not api_key:
-            raise CommandError("GROQ_API_KEY is not set in the environment.")
+        groq_key = settings.GROQ_API_KEY
+        nim_key = getattr(settings, "NVIDIA_NIM_API_KEY", "")
+        if not groq_key and not nim_key:
+            raise CommandError("Neither GROQ_API_KEY nor NVIDIA_NIM_API_KEY is set in the environment.")
+
+        session = requests.Session()
+        groq_headers = {"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"}
+        nim_headers = {"Authorization": f"Bearer {nim_key}", "Content-Type": "application/json"} if nim_key else None
+        nim_model = resolve_nim_model(session, nim_key, self.stderr) if nim_key else None
+        nim_json_mode = True
+
+        if nim_key:
+            self.stdout.write(f"NVIDIA NIM fallback enabled (model: {nim_model}).")
+        else:
+            self.stdout.write("No NVIDIA_NIM_API_KEY set — running Groq-only, no fallback on rate limits.")
 
         qs = CompanyLinkedInPost.objects.select_related("company").order_by("id")
         if not options["reclassify"]:
@@ -92,54 +205,71 @@ class Command(BaseCommand):
         qs = qs.exclude(post_text="")
         posts = list(qs[: options["limit"]] if options["limit"] else qs)
         total = len(posts)
-        self.stdout.write(f"Tagged {empty_count} empty-text posts directly. Classifying {total} posts via Groq ({MODEL})...")
-
-        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-        session = requests.Session()
+        self.stdout.write(f"Tagged {empty_count} empty-text posts directly. Classifying {total} posts...")
 
         classified = 0
         failed_batches = 0
+        groq_batches = 0
+        nim_batches = 0
 
         for i in range(0, total, BATCH_SIZE):
             batch = posts[i : i + BATCH_SIZE]
-            payload = {
-                "model": MODEL,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": build_user_prompt(batch)},
-                ],
-                "response_format": {"type": "json_object"},
-                "temperature": 0.2,
-            }
+            messages = [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": build_user_prompt(batch)},
+            ]
+            batch_label = f"batch {i}-{i + len(batch)}"
 
             result = None
-            for attempt in range(3):
-                try:
-                    response = session.post(GROQ_URL, headers=headers, json=payload, timeout=60)
-                    if response.status_code == 429:
-                        # Groq has occasionally been observed returning a retry-after
-                        # far longer than the account's actual TPM window (confirmed
-                        # via a direct probe showing the account was not really
-                        # limited); cap the wait so one bad header can't stall a
-                        # batch for tens of minutes.
-                        wait = min(float(response.headers.get("retry-after", 5)), 30)
-                        self.stderr.write(f"  batch {i}-{i+len(batch)} attempt {attempt+1}: 429, waiting {wait:.1f}s")
-                        time.sleep(wait)
-                        continue
-                    response.raise_for_status()
-                    content = response.json()["choices"][0]["message"]["content"]
-                    result = json.loads(content)
-                    break
-                except Exception as error:
-                    self.stderr.write(f"  batch {i}-{i+len(batch)} attempt {attempt+1} failed: {error}")
-                    time.sleep(2)
+            provider_used = None
+
+            if groq_key:
+                payload = {
+                    "model": GROQ_MODEL,
+                    "messages": messages,
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.2,
+                }
+                # A single, no-wait attempt: Groq's daily cap can stay pinned
+                # for hours, so don't burn time retrying/backing off on it —
+                # fall straight through to NVIDIA NIM and let Groq's occasional
+                # trickle of headroom get picked up by whichever batch is
+                # lucky enough to hit it, rather than blocking on it.
+                result, _ = call_llm(
+                    session, GROQ_URL, groq_headers, payload, f"{batch_label} [groq]",
+                    self.stdout, self.stderr, max_attempts=1, max_wait=0,
+                )
+                if result:
+                    provider_used = "groq"
+
+            if not result and nim_key:
+                payload = {
+                    "model": nim_model,
+                    "messages": messages,
+                    "temperature": 0.2,
+                }
+                if nim_json_mode:
+                    payload["response_format"] = {"type": "json_object"}
+                result, saw_json_mode_error = call_llm(
+                    session, NIM_URL, nim_headers, payload, f"{batch_label} [nim:{nim_model}]",
+                    self.stdout, self.stderr, max_attempts=3, max_wait=30,
+                )
+                if saw_json_mode_error:
+                    nim_json_mode = False
+                if result:
+                    provider_used = "nim"
 
             if not result:
                 failed_batches += 1
-                self.stderr.write(f"  batch {i}-{i+len(batch)}: giving up after 3 attempts")
+                self.stderr.write(f"  {batch_label}: giving up on all providers")
                 continue
 
-            # Each Groq call can sit for minutes waiting out a rate limit, long
+            if provider_used == "groq":
+                groq_batches += 1
+            else:
+                nim_batches += 1
+
+            # Each LLM call can sit for a while waiting out a rate limit, long
             # enough for Neon to silently drop an idle connection. Reusing a
             # connection in that state can hang forever on read() rather than
             # raising an error (seen in practice), so force a fresh one before
@@ -162,8 +292,12 @@ class Command(BaseCommand):
                 save_resilient(post, ["category", "ai_headline", "ai_processed_at"])
                 classified += 1
 
-            self.stdout.write(f"  [{min(i+BATCH_SIZE, total)}/{total}] classified so far: {classified}")
+            self.stdout.write(
+                f"  [{min(i + BATCH_SIZE, total)}/{total}] classified so far: {classified} "
+                f"(groq batches: {groq_batches}, nim batches: {nim_batches})"
+            )
 
         self.stdout.write(self.style.SUCCESS(
-            f"Done. Classified {classified} posts via Groq, {empty_count} tagged directly, {failed_batches} batches failed."
+            f"Done. Classified {classified} posts ({groq_batches} batches via Groq, {nim_batches} via NVIDIA NIM), "
+            f"{empty_count} tagged directly, {failed_batches} batches failed on all providers."
         ))

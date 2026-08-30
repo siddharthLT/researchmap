@@ -175,3 +175,7 @@ RSSHUB_BASE_URL = os.environ.get("RSSHUB_BASE_URL", "http://127.0.0.1:1201")
 
 # Groq API (used by classify_linkedin_posts to categorize Social Room posts).
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
+# NVIDIA NIM (build.nvidia.com) fallback for classify_linkedin_posts, used
+# once Groq's daily token cap is exhausted.
+NVIDIA_NIM_API_KEY = os.environ.get("NVIDIA_NIM_API_KEY", "")
