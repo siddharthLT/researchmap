@@ -132,6 +132,34 @@
       background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-right: 28px;
     }
     input:hover, select:hover { border-color: var(--s1); }
+
+    .ms { position: relative; }
+    .ms-trigger {
+      width: 100%; text-align: left; padding: 0 30px 0 10px; font-size: .86rem;
+      color: var(--ink); cursor: pointer; position: relative;
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: calc(100% - 16px) 16px, calc(100% - 10px) 16px;
+      background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+    }
+    .ms-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+    .ms.open .ms-trigger { border-color: var(--s1); }
+    .ms-panel {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.14); padding: 8px; display: grid; gap: 6px;
+    }
+    .ms-search { min-height: 32px; font-size: .82rem; }
+    .ms-options { max-height: 220px; overflow-y: auto; display: grid; gap: 1px; }
+    .ms-option {
+      display: flex; align-items: center; gap: 8px; padding: 6px 6px;
+      border-radius: 6px; font-size: .82rem; color: var(--ink-2); cursor: pointer;
+      min-height: auto;
+    }
+    .ms-option:hover { background: var(--surface-2); }
+    .ms-option input { min-height: auto; width: auto; accent-color: var(--s1); }
+    .ms-option span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ms-option.ms-hidden { display: none; }
+
     .filter-actions { display: flex; gap: 8px; }
     .btn {
       padding: 0 14px; cursor: pointer; font-weight: 650; font-size: .84rem;
@@ -301,31 +329,53 @@
             <input type="search" id="q" name="q" placeholder="Search posts or companies" value="{{ q }}">
           </div>
           <div class="filter-field">
-            <label for="company">Company</label>
-            <select id="company" name="company">
-              <option value="">All companies</option>
-              {% for c in company_options %}
-                <option value="{{ c.id }}" {% if selected_company == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
-              {% endfor %}
-            </select>
+            <label>Company</label>
+            <div class="ms" data-ms data-empty-label="All companies">
+              <button type="button" class="ms-trigger"><span class="ms-trigger-label">All companies</span></button>
+              <div class="ms-panel" hidden>
+                <input type="search" class="ms-search" placeholder="Search companies&hellip;">
+                <div class="ms-options">
+                  {% for c in company_options %}
+                    <label class="ms-option">
+                      <input type="checkbox" name="company" value="{{ c.id }}" {% if c.id|stringformat:"s" in selected_companies %}checked{% endif %}>
+                      <span>{{ c.name }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
           </div>
           <div class="filter-field">
-            <label for="state">Geography</label>
-            <select id="state" name="state">
-              <option value="">All states</option>
-              {% for s in state_options %}
-                <option value="{{ s }}" {% if selected_state == s %}selected{% endif %}>{{ s }}</option>
-              {% endfor %}
-            </select>
+            <label>Geography</label>
+            <div class="ms" data-ms data-empty-label="All states">
+              <button type="button" class="ms-trigger"><span class="ms-trigger-label">All states</span></button>
+              <div class="ms-panel" hidden>
+                <div class="ms-options">
+                  {% for s in state_options %}
+                    <label class="ms-option">
+                      <input type="checkbox" name="state" value="{{ s }}" {% if s in selected_states %}checked{% endif %}>
+                      <span>{{ s }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
           </div>
           <div class="filter-field">
-            <label for="segment">Segment</label>
-            <select id="segment" name="segment">
-              <option value="">All segments</option>
-              {% for seg in segment_options %}
-                <option value="{{ seg }}" {% if selected_segment == seg %}selected{% endif %}>{{ seg }}</option>
-              {% endfor %}
-            </select>
+            <label>Segment</label>
+            <div class="ms" data-ms data-empty-label="All segments">
+              <button type="button" class="ms-trigger"><span class="ms-trigger-label">All segments</span></button>
+              <div class="ms-panel" hidden>
+                <div class="ms-options">
+                  {% for seg in segment_options %}
+                    <label class="ms-option">
+                      <input type="checkbox" name="segment" value="{{ seg }}" {% if seg in selected_segments %}checked{% endif %}>
+                      <span>{{ seg }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
           </div>
           <div class="filter-actions">
             <button type="submit" class="btn btn-primary">Apply</button>
@@ -455,10 +505,68 @@
       });
     })();
 
-    // Auto-submit filter selects on change for convenience.
-    document.querySelectorAll("#filter-form select").forEach(function (el) {
-      el.addEventListener("change", function () { document.getElementById("filter-form").submit(); });
-    });
+    // Multiselect dropdowns (company / geography / segment): a button that
+    // toggles a checkbox-list panel. Selections only take effect when the
+    // form's Apply button is submitted, same as before.
+    (function () {
+      var multiselects = document.querySelectorAll("[data-ms]");
+
+      function closeAll(except) {
+        multiselects.forEach(function (ms) {
+          if (ms !== except) {
+            ms.classList.remove("open");
+            ms.querySelector(".ms-panel").hidden = true;
+          }
+        });
+      }
+
+      function updateLabel(ms) {
+        var checked = ms.querySelectorAll('input[type=checkbox]:checked');
+        var labelEl = ms.querySelector(".ms-trigger-label");
+        if (checked.length === 0) {
+          labelEl.textContent = ms.dataset.emptyLabel || "All";
+        } else if (checked.length === 1) {
+          labelEl.textContent = checked[0].closest(".ms-option").querySelector("span").textContent;
+        } else {
+          labelEl.textContent = checked.length + " selected";
+        }
+      }
+
+      multiselects.forEach(function (ms) {
+        var trigger = ms.querySelector(".ms-trigger");
+        var panel = ms.querySelector(".ms-panel");
+        var search = ms.querySelector(".ms-search");
+
+        updateLabel(ms);
+
+        trigger.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var willOpen = panel.hidden;
+          closeAll(ms);
+          panel.hidden = !willOpen;
+          ms.classList.toggle("open", willOpen);
+          if (willOpen && search) search.focus();
+        });
+
+        ms.querySelectorAll('input[type=checkbox]').forEach(function (cb) {
+          cb.addEventListener("change", function () { updateLabel(ms); });
+        });
+
+        if (search) {
+          search.addEventListener("input", function () {
+            var term = search.value.trim().toLowerCase();
+            ms.querySelectorAll(".ms-option").forEach(function (opt) {
+              var text = opt.querySelector("span").textContent.toLowerCase();
+              opt.classList.toggle("ms-hidden", term.length > 0 && text.indexOf(term) === -1);
+            });
+          });
+        }
+      });
+
+      document.addEventListener("click", function (e) {
+        if (!e.target.closest("[data-ms]")) closeAll(null);
+      });
+    })();
 
     // Save / unsave a post. Backed by the DB (CompanyLinkedInPost.is_saved),
     // not localStorage, so it's correct regardless of which page a post is on.
