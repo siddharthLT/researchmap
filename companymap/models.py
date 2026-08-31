@@ -154,6 +154,26 @@ class DecisionMaker(models.Model):
 
 
 class CompanyLinkedInPost(models.Model):
+    class Category(models.TextChoices):
+        CAPABILITY_EXPANSION = "capability_expansion", "Capability Expansion"
+        NEW_PARTNERSHIP = "new_partnership", "New Partnership"
+        NEW_FUNDING = "new_funding", "New Funding"
+        RESEARCH_MILESTONE = "research_milestone", "Research Milestone"
+        HIRING = "hiring", "Hiring"
+        EVENT_ATTENDANCE = "event_attendance", "Event Attendance"
+        COMPANY_UPDATE = "company_update", "Company Update"
+
+    # Categories treated as "real news signal" for the ticker/breakdown —
+    # everything except the generic company_update fallback.
+    SIGNAL_CATEGORIES = [
+        Category.CAPABILITY_EXPANSION,
+        Category.NEW_PARTNERSHIP,
+        Category.NEW_FUNDING,
+        Category.RESEARCH_MILESTONE,
+        Category.HIRING,
+        Category.EVENT_ATTENDANCE,
+    ]
+
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
@@ -170,6 +190,10 @@ class CompanyLinkedInPost(models.Model):
 
     is_saved = models.BooleanField(default=False)
 
+    category = models.CharField(max_length=32, choices=Category.choices, blank=True)
+    ai_headline = models.CharField(max_length=200, blank=True)
+    ai_processed_at = models.DateTimeField(null=True, blank=True)
+
     fetched_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -179,6 +203,7 @@ class CompanyLinkedInPost(models.Model):
             models.Index(fields=["company", "-post_date"]),
             models.Index(fields=["-post_date"]),
             models.Index(fields=["is_saved"]),
+            models.Index(fields=["category", "-post_date"]),
         ]
 
     def __str__(self):

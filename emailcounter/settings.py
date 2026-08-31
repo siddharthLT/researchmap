@@ -114,6 +114,10 @@ if DATABASE_URL:
         )
     }
     DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+    # Defense in depth against a connection that goes stale mid-process (seen
+    # with long-running management commands that sit idle between DB calls):
+    # bound how long a hung connect/read can block instead of hanging forever.
+    DATABASES["default"].setdefault("OPTIONS", {})["connect_timeout"] = 10
 else:
     DATABASES = {
         "default": {
@@ -168,3 +172,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Local RSSHub instance (see docker-compose.rsshub.local.yml) used by
 # `import_linkedin_posts` to pull LinkedIn company-page posts.
 RSSHUB_BASE_URL = os.environ.get("RSSHUB_BASE_URL", "http://127.0.0.1:1201")
+
+# Groq API (used by classify_linkedin_posts to categorize Social Room posts).
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
+# NVIDIA NIM (build.nvidia.com) fallback for classify_linkedin_posts, used
+# once Groq's daily token cap is exhausted.
+NVIDIA_NIM_API_KEY = os.environ.get("NVIDIA_NIM_API_KEY", "")
