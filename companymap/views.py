@@ -1,10 +1,9 @@
 import json
 import logging
 from collections import defaultdict
-from datetime import timedelta
 
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Case, Count, IntegerField, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -141,19 +140,19 @@ def social_room(request):
     )
 
     q = request.GET.get("q", "").strip()
-    company_id = request.GET.get("company", "").strip()
-    state_code = request.GET.get("state", "").strip()
-    segment = request.GET.get("segment", "").strip()
+    company_ids = [v for v in request.GET.getlist("company") if v]
+    state_codes = [v for v in request.GET.getlist("state") if v]
+    segments = [v for v in request.GET.getlist("segment") if v]
     view = request.GET.get("view", "").strip()
 
     if q:
         posts = posts.filter(Q(post_text__icontains=q) | Q(company__name__icontains=q))
-    if company_id:
-        posts = posts.filter(company_id=company_id)
-    if state_code:
-        posts = posts.filter(company__state_code=state_code)
-    if segment:
-        posts = posts.filter(company__segment=segment)
+    if company_ids:
+        posts = posts.filter(company_id__in=company_ids)
+    if state_codes:
+        posts = posts.filter(company__state_code__in=state_codes)
+    if segments:
+        posts = posts.filter(company__segment__in=segments)
 
     saved_count = CompanyLinkedInPost.objects.filter(is_saved=True).count()
     if view == "saved":
@@ -189,29 +188,28 @@ def social_room(request):
         .order_by("segment")
     )
 
-    # Ticker: top 10 "real news" posts (capability/partnership/funding/research/
-    # hiring/event signals, excludes generic company_update) from the last 14
-    # days. Backfills with older signal posts if fewer than 10 are that recent
-    # (e.g. while classification is still catching up), so it's never sparse.
-    ticker_cutoff = timezone.now() - timedelta(days=14)
+    # Ticker: top 10 "real news" posts, ranked by how meaningful the signal is
+    # to Lunartree first and recency second — funding/partnership/capability
+    # news is the good stuff and often rare, so it must outrank the much more
+    # common (and much less interesting) event-attendance and hiring posts
+    # rather than just picking whatever is newest.
     ticker_posts = list(
         CompanyLinkedInPost.objects
         .select_related("company")
         .exclude(company__isnull=True)
-        .filter(category__in=CompanyLinkedInPost.SIGNAL_CATEGORIES, post_date__gte=ticker_cutoff)
-        .order_by("-post_date")[:10]
+        .filter(category__in=CompanyLinkedInPost.SIGNAL_CATEGORIES)
+        .annotate(ticker_priority=Case(
+            When(category=CompanyLinkedInPost.Category.NEW_FUNDING, then=Value(0)),
+            When(category=CompanyLinkedInPost.Category.NEW_PARTNERSHIP, then=Value(0)),
+            When(category=CompanyLinkedInPost.Category.CAPABILITY_EXPANSION, then=Value(0)),
+            When(category=CompanyLinkedInPost.Category.RESEARCH_MILESTONE, then=Value(1)),
+            When(category=CompanyLinkedInPost.Category.EVENT_ATTENDANCE, then=Value(2)),
+            When(category=CompanyLinkedInPost.Category.HIRING, then=Value(3)),
+            default=Value(4),
+            output_field=IntegerField(),
+        ))
+        .order_by("ticker_priority", "-post_date")[:10]
     )
-    if len(ticker_posts) < 10:
-        have_ids = [p.id for p in ticker_posts]
-        backfill = (
-            CompanyLinkedInPost.objects
-            .select_related("company")
-            .exclude(company__isnull=True)
-            .filter(category__in=CompanyLinkedInPost.SIGNAL_CATEGORIES)
-            .exclude(id__in=have_ids)
-            .order_by("-post_date")[: 10 - len(ticker_posts)]
-        )
-        ticker_posts = ticker_posts + list(backfill)
 
     querystring = request.GET.copy()
     querystring.pop("page", None)
@@ -229,9 +227,9 @@ def social_room(request):
             "segment_options": segment_options,
             "ticker_posts": ticker_posts,
             "q": q,
-            "selected_company": company_id,
-            "selected_state": state_code,
-            "selected_segment": segment,
+            "selected_companies": set(company_ids),
+            "selected_states": set(state_codes),
+            "selected_segments": set(segments),
             "view": view,
             "saved_count": saved_count,
             "querystring": querystring.urlencode(),
