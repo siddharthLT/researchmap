@@ -517,7 +517,18 @@
       var loader = document.getElementById("lt-loader");
       if (!loader) return;
       window.addEventListener("load", function () { loader.classList.add("lt-hidden"); });
+      // Restoring from the back/forward cache (e.g. hitting the browser's
+      // Back button) doesn't fire "load" again, so without this the loader
+      // shown right before navigating away stays stuck on-screen forever
+      // once the cached page is restored.
+      window.addEventListener("pageshow", function (event) {
+        if (event.persisted) loader.classList.add("lt-hidden");
+      });
       document.addEventListener("click", function (event) {
+        // A modified click (cmd/ctrl/shift-click) or a middle-click opens
+        // the link in a new tab/window — this tab never navigates, so the
+        // "load" listener above that hides the loader will never fire again.
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
         var link = event.target.closest("a[href]");
         if (!link) return;
         var url = link.getAttribute("href") || "";
