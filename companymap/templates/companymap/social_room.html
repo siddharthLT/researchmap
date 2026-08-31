@@ -143,6 +143,7 @@
     }
     .ms-trigger-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
     .ms.open .ms-trigger { border-color: var(--s1); }
+    .ms-panel[hidden] { display: none; }
     .ms-panel {
       position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
       background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
@@ -371,6 +372,22 @@
                     <label class="ms-option">
                       <input type="checkbox" name="segment" value="{{ seg }}" {% if seg in selected_segments %}checked{% endif %}>
                       <span>{{ seg }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="filter-field">
+            <label>Category</label>
+            <div class="ms" data-ms data-empty-label="All categories">
+              <button type="button" class="ms-trigger"><span class="ms-trigger-label">All categories</span></button>
+              <div class="ms-panel" hidden>
+                <div class="ms-options">
+                  {% for value, display in category_options %}
+                    <label class="ms-option">
+                      <input type="checkbox" name="category" value="{{ value }}" {% if value in selected_categories %}checked{% endif %}>
+                      <span>{{ display }}</span>
                     </label>
                   {% endfor %}
                 </div>

@@ -143,6 +143,7 @@ def social_room(request):
     company_ids = [v for v in request.GET.getlist("company") if v]
     state_codes = [v for v in request.GET.getlist("state") if v]
     segments = [v for v in request.GET.getlist("segment") if v]
+    categories = [v for v in request.GET.getlist("category") if v]
     view = request.GET.get("view", "").strip()
 
     if q:
@@ -153,6 +154,8 @@ def social_room(request):
         posts = posts.filter(company__state_code__in=state_codes)
     if segments:
         posts = posts.filter(company__segment__in=segments)
+    if categories:
+        posts = posts.filter(category__in=categories)
 
     saved_count = CompanyLinkedInPost.objects.filter(is_saved=True).count()
     if view == "saved":
@@ -187,6 +190,7 @@ def social_room(request):
         .distinct()
         .order_by("segment")
     )
+    category_options = CompanyLinkedInPost.Category.choices
 
     # Ticker: top 10 "real news" posts, ranked by how meaningful the signal is
     # to Lunartree first and recency second — funding/partnership/capability
@@ -225,11 +229,13 @@ def social_room(request):
             "company_options": company_options,
             "state_options": state_options,
             "segment_options": segment_options,
+            "category_options": category_options,
             "ticker_posts": ticker_posts,
             "q": q,
             "selected_companies": set(company_ids),
             "selected_states": set(state_codes),
             "selected_segments": set(segments),
+            "selected_categories": set(categories),
             "view": view,
             "saved_count": saved_count,
             "querystring": querystring.urlencode(),
