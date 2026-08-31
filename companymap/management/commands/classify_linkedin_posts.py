@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 import re
 import time
@@ -69,6 +70,14 @@ Return ONLY a JSON object of the exact shape:
 {"results": [{"id": <post id as integer>, "category": "<one of the 7 categories above>", \
 "headline": "<10-15 word headline>"}, ...]}
 One entry per post given, in the same order, using the exact numeric id provided for each post."""
+
+
+def parse_date_boundary(date_str):
+    """Parse a --since/--until YYYY-MM-DD flag as a UTC midnight boundary
+    (post_date is stored in UTC) rather than the server's local TIME_ZONE,
+    so the filter means what it says regardless of where this runs."""
+    naive = dt.datetime.strptime(date_str, "%Y-%m-%d")
+    return naive.replace(tzinfo=dt.timezone.utc)
 
 
 def build_user_prompt(posts):
@@ -170,6 +179,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--limit", type=int, default=None, help="Only process the first N unclassified posts.")
         parser.add_argument("--reclassify", action="store_true", help="Re-run even posts that already have a category.")
+        parser.add_argument("--since", type=str, default=None, help="Only process posts with post_date >= this date (YYYY-MM-DD).")
+        parser.add_argument("--until", type=str, default=None, help="Only process posts with post_date < this date (YYYY-MM-DD, exclusive).")
 
     def handle(self, *args, **options):
         groq_key = settings.GROQ_API_KEY
@@ -188,9 +199,16 @@ class Command(BaseCommand):
         else:
             self.stdout.write("No NVIDIA_NIM_API_KEY set — running Groq-only, no fallback on rate limits.")
 
-        qs = CompanyLinkedInPost.objects.select_related("company").order_by("id")
+        # Newest first by default so a partial/interrupted run still covers
+        # the most relevant (recent) content, and so --since/--until slices
+        # can be run as tiers (newest month first, then the next, etc).
+        qs = CompanyLinkedInPost.objects.select_related("company").order_by("-post_date")
         if not options["reclassify"]:
             qs = qs.filter(category="")
+        if options["since"]:
+            qs = qs.filter(post_date__gte=parse_date_boundary(options["since"]))
+        if options["until"]:
+            qs = qs.filter(post_date__lt=parse_date_boundary(options["until"]))
 
         # Empty-text posts have nothing to classify from; tag them directly.
         empty = qs.filter(post_text="")
