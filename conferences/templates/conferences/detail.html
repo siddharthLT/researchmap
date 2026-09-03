@@ -158,15 +158,22 @@
     {% if tag_options %}
       <div class="filter-bar">
         {% for opt in tag_options %}
-          <span class="chip filter-chip" data-value="{{ opt.value }}" style="--c: var(--s1)">{{ opt.label }} <span class="n">{{ opt.count }}</span></span>
+          <span class="chip filter-chip" data-group="tag" data-value="{{ opt.value }}" style="--c: var(--s1)">{{ opt.label }} <span class="n">{{ opt.count }}</span></span>
         {% endfor %}
         <span class="filter-count" id="filter-count"></span>
+      </div>
+    {% endif %}
+    {% if segment_options %}
+      <div class="filter-bar">
+        {% for opt in segment_options %}
+          <span class="chip filter-chip" data-group="segment" data-value="{{ opt.value }}" style="--c: var(--s2)">{{ opt.label }} <span class="n">{{ opt.count }}</span></span>
+        {% endfor %}
       </div>
     {% endif %}
     {% if companies %}
       <div class="company-grid" id="company-grid">
         {% for company in companies %}
-          <div class="company-card" data-tags="{{ company.data_tags }}">
+          <div class="company-card" data-tags="{{ company.data_tags }}" data-segment="{{ company.data_segment }}">
             <div class="name">{{ company.name }}</div>
             {% if company.tag_badges %}
               <div>
@@ -276,7 +283,8 @@
   });
 
   (function initCompanyFilters() {
-    var active = new Set();
+    var activeTags = new Set();
+    var activeSegments = new Set();
     var cards = Array.from(document.querySelectorAll('.company-card'));
     var countEl = document.getElementById('filter-count');
 
@@ -284,7 +292,9 @@
       var visible = 0;
       cards.forEach(function (card) {
         var tags = (card.dataset.tags || '').split('|').filter(Boolean);
-        var ok = active.size === 0 || tags.some(function (t) { return active.has(t); });
+        var tagOk = activeTags.size === 0 || tags.some(function (t) { return activeTags.has(t); });
+        var segmentOk = activeSegments.size === 0 || activeSegments.has(card.dataset.segment || '');
+        var ok = tagOk && segmentOk;
         card.style.display = ok ? '' : 'none';
         if (ok) visible++;
       });
@@ -292,10 +302,11 @@
     }
 
     document.querySelectorAll('.filter-chip').forEach(function (chip) {
+      var group = chip.dataset.group === 'segment' ? activeSegments : activeTags;
       chip.addEventListener('click', function () {
         var val = chip.dataset.value;
-        if (active.has(val)) { active.delete(val); chip.classList.remove('active'); }
-        else { active.add(val); chip.classList.add('active'); }
+        if (group.has(val)) { group.delete(val); chip.classList.remove('active'); }
+        else { group.add(val); chip.classList.add('active'); }
         apply();
       });
     });

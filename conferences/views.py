@@ -80,9 +80,20 @@ def conference_detail(request, slug):
         {"value": value, "label": tag_labels.get(value, value), "count": count}
         for value, count in sorted(tag_counts.items(), key=lambda kv: -kv[1])
     ]
+
+    UNMATCHED_SEGMENT = "__unmatched__"
+    segment_counts = Counter()
+    for company in companies:
+        segment_counts[company.company.segment if (company.company and company.company.segment) else UNMATCHED_SEGMENT] += 1
+    segment_options = [
+        {"value": value, "label": "Not in our DB" if value == UNMATCHED_SEGMENT else value, "count": count}
+        for value, count in sorted(segment_counts.items(), key=lambda kv: -kv[1])
+    ]
+
     synthego_labels = dict(Company.SynthegoRelation.choices)
     for company in companies:
         company.data_tags = "|".join(company.tags)
+        company.data_segment = company.company.segment if (company.company and company.company.segment) else UNMATCHED_SEGMENT
         company.tag_badges = [{"value": t, "label": tag_labels.get(t, t)} for t in company.tags]
 
         info_badges = []
@@ -194,6 +205,7 @@ def conference_detail(request, slug):
             "conference": conference,
             "companies": companies,
             "tag_options": tag_options,
+            "segment_options": segment_options,
             "days": days,
             "hour_marks": hour_marks,
             "total_sessions": len(sessions),
