@@ -187,7 +187,10 @@
             {% endif %}
             {% if company.booth %}<div class="booth">Booth {{ company.booth }}</div>{% endif %}
             <div class="links">
-              {% if company.website %}<a class="icon-btn" href="{{ company.website }}" target="_blank" rel="noopener">Website</a>{% endif %}
+              {% with site=company.company.url|default:company.website %}
+                {% if site %}<a class="icon-btn" href="{{ site }}" target="_blank" rel="noopener">Website</a>{% endif %}
+              {% endwith %}
+              {% if company.company_id %}<a class="icon-btn" href="{% url 'contactdb:company_brief' company.company_id %}">Brief</a>{% endif %}
               {% if company.linkedin_url %}<a class="icon-btn" href="{{ company.linkedin_url }}" target="_blank" rel="noopener">LinkedIn</a>{% endif %}
             </div>
           </div>
