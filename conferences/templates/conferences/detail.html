@@ -138,7 +138,10 @@
 {% block content %}
   <header class="masthead">
     <p class="eyebrow"><a href="{% url 'conferences:home' %}">Conferences</a></p>
-    <h2 class="page-title">{{ conference.name }}<span class="cat-count" style="--c: var(--s1)">{{ companies|length }} companies</span></h2>
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+      <h2 class="page-title">{{ conference.name }}<span class="cat-count" style="--c: var(--s1)">{{ companies|length }} companies</span></h2>
+      <a class="icon-btn" href="{% url 'conferences:conference_export' conference.slug %}">Export this event ↓</a>
+    </div>
     <div class="meta">
       <span>{{ conference.location }}</span>
       {% if conference.start_date %}<span>{{ conference.start_date|date:"M j" }}{% if conference.end_date %}–{{ conference.end_date|date:"j, Y" }}{% endif %}</span>{% endif %}
