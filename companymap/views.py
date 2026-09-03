@@ -58,6 +58,7 @@ def company_map_data(request):
     companies = Company.objects.prefetch_related("decision_makers").filter(
         latitude__isnull=False,
         longitude__isnull=False,
+        show_on_map=True,
     )
 
     state_code = request.GET.get("state")

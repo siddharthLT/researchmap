@@ -57,6 +57,12 @@ class Company(models.Model):
         help_text="True if a known contact's department is Data Warehouse, Data Science, BI, Digital "
         "Transformation, or IT. Derived from existing Person records only.",
     )
+    show_on_map = models.BooleanField(
+        default=True,
+        help_text="Whether this company appears as a pin on the map. Buyer-side companies "
+        "(pharma/biotech, drug developers) are kept in the database for reference but excluded "
+        "from the map, which is scoped to supply-side vendors.",
+    )
     account_list_source = models.CharField(max_length=255, blank=True)
     annual_revenue = models.BigIntegerField(null=True, blank=True)
     funding_data = models.TextField(blank=True)
