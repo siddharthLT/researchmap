@@ -15,4 +15,5 @@ urlpatterns = [
     path("connections/<slug:slug>/", views.connection_universe, name="connection_universe"),
     path("company/<int:company_id>/", views.company_brief, name="company_brief"),
     path("api/people/<int:person_id>/contact/", views.person_contact, name="person_contact"),
+    path("outreach-plan/", views.outreach_plan, name="outreach_plan"),
 ]

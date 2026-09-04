@@ -1,0 +1,115 @@
+{% extends "contactdb/base.html" %}
+{% block title %}Outreach Plan · ContactDB{% endblock %}
+
+{% block content %}
+<style>
+  .op-header { margin: 24px 0 20px; }
+  .op-header h1 { font-family: "Source Serif 4", serif; font-size: 28px; margin: 0 0 6px; }
+  .op-header p { color: var(--muted); margin: 0; font-size: 14px; }
+
+  .phase {
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+    margin-bottom: 14px; overflow: hidden;
+  }
+  .phase > summary {
+    list-style: none; cursor: pointer; padding: 16px 20px;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .phase > summary::-webkit-details-marker { display: none; }
+  .phase > summary::before {
+    content: "▸"; display: inline-block; margin-right: 8px; color: var(--muted);
+    transition: transform .15s ease;
+  }
+  .phase[open] > summary::before { transform: rotate(90deg); }
+  .phase-title { font-weight: 600; font-size: 16px; }
+  .phase-window { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .phase-universe { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; max-width: 640px; }
+  .phase-body { padding: 0 20px 18px; }
+
+  .segment {
+    border: 1px solid var(--border); border-radius: 8px; background: var(--page);
+    margin-top: 10px; overflow: hidden;
+  }
+  .segment > summary {
+    list-style: none; cursor: pointer; padding: 10px 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  .segment > summary::-webkit-details-marker { display: none; }
+  .segment-label { font-weight: 600; font-size: 13.5px; }
+  .segment-label::before { content: "▸"; display: inline-block; margin-right: 6px; color: var(--muted); }
+  .segment[open] > summary .segment-label::before { transform: rotate(90deg); display: inline-block; }
+  .segment-meta { display: flex; align-items: center; gap: 10px; }
+  .segment-count {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink);
+    background: var(--surface-2); border-radius: 999px; padding: 2px 9px;
+  }
+  .segment-channel { font-size: 11.5px; color: var(--muted); }
+
+  .segment-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .segment-table th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .03em;
+    color: var(--muted); font-weight: 500; padding: 6px 14px; border-bottom: 1px solid var(--border);
+  }
+  .segment-table td { padding: 7px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .segment-table tr:last-child td { border-bottom: none; }
+  .not-in-db {
+    font-size: 10.5px; font-family: "IBM Plex Mono", monospace; color: var(--s2);
+    border: 1px solid var(--s2); border-radius: 4px; padding: 1px 5px; margin-left: 6px;
+  }
+  .empty-segment { padding: 14px; color: var(--muted); font-size: 13px; }
+  .op-link { font-size: 12.5px; }
+</style>
+
+<div class="op-header">
+  <h1>Outreach Plan</h1>
+  <p>Live from the database — segmented by phase and priority tier. Click a phase, then a tier, to see the people in it.</p>
+</div>
+
+{% for phase in phases %}
+  <details class="phase" {% if forloop.first %}open{% endif %}>
+    <summary>
+      <div>
+        <div class="phase-title">{{ phase.title }}</div>
+        <div class="phase-window">{{ phase.window }}</div>
+        <div class="phase-universe">{{ phase.universe_note }}</div>
+      </div>
+    </summary>
+    <div class="phase-body">
+      {% for segment in phase.segments %}
+        <details class="segment">
+          <summary>
+            <span class="segment-label">{{ segment.label }}</span>
+            <span class="segment-meta">
+              <span class="segment-channel">{{ segment.channel }}</span>
+              <span class="segment-count">{{ segment.count }}</span>
+            </span>
+          </summary>
+          {% if segment.people %}
+            <table class="segment-table">
+              <thead>
+                <tr><th>Name</th><th>Title</th><th>Company</th><th>Links</th></tr>
+              </thead>
+              <tbody>
+                {% for person in segment.people %}
+                  <tr>
+                    <td>{{ person.name }}{% if not person.in_db %}<span class="not-in-db">not in DB</span>{% endif %}</td>
+                    <td>{{ person.title|default:"—" }}</td>
+                    <td>{{ person.company_name }}</td>
+                    <td>
+                      {% if person.website %}<a class="op-link" href="{{ person.website }}" target="_blank" rel="noopener">Website</a>{% endif %}
+                      {% if person.linkedin_url %} &middot; <a class="op-link" href="{{ person.linkedin_url }}" target="_blank" rel="noopener">LinkedIn</a>{% endif %}
+                      {% if person.company_id %} &middot; <a class="op-link" href="{% url 'contactdb:company_brief' person.company_id %}">Brief</a>{% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <div class="empty-segment">Nobody in this tier{% if segment.key == "confirmed" %} — no LinkedIn-post confirmation data captured for this conference yet{% endif %}.</div>
+          {% endif %}
+        </details>
+      {% endfor %}
+    </div>
+  </details>
+{% endfor %}
+{% endblock %}
