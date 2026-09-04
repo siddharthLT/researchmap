@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outreach Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --page:#f9f9f7; --surface:#fcfcfb; --surface-2:#eef0ee;
+    --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --border:rgba(11,11,11,0.10);
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+    --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+      --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --s5:#d55181; --s6:#008300; --s7:#9085e9;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#232322;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --border:rgba(255,255,255,0.10);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --s5:#d55181; --s6:#008300; --s7:#9085e9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page); color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5; margin: 0; padding: 0 24px 96px;
+  }
+  a { color: var(--s1); }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .backlink { display: inline-block; margin-top: 24px; font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted); text-decoration: none; }
+  .backlink:hover { color: var(--s1); }
+  .masthead { padding: 20px 0 40px; border-bottom: 1px solid var(--border); }
+  .eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+  h1 { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: clamp(32px, 4.5vw, 46px); line-height: 1.12; margin: 0 0 16px; text-wrap: balance; max-width: 22ch; }
+  .dek { font-size: 17px; color: var(--ink-2); max-width: 68ch; margin: 0 0 20px; }
+  .meta { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap; }
+
+  .jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 32px 0 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px 6px 10px; font-size: 12.5px; color: var(--ink-2); text-decoration: none; background: var(--surface); }
+  .chip:hover { border-color: var(--c, var(--muted)); }
+  .chip-n { font-family: "IBM Plex Mono", monospace; color: var(--muted); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: none; }
+
+  .cat-section { margin-top: 40px; scroll-margin-top: 20px; border-top: 1px solid var(--border); padding-top: 32px; }
+  .cat-section:first-of-type { margin-top: 48px; }
+  .cat-section > summary {
+    display: flex; align-items: flex-start; gap: 14px; cursor: pointer; list-style: none;
+  }
+  .cat-section > summary::-webkit-details-marker { display: none; }
+  .chev { flex: none; color: var(--muted); font-size: 15px; margin-top: 6px; transition: transform .15s ease; }
+  .cat-section[open] > summary .chev { transform: rotate(90deg); }
+  .rule { width: 4px; align-self: stretch; min-height: 44px; background: var(--c); border-radius: 2px; flex: none; }
+  .cat-title-text { flex: 1 1 auto; min-width: 0; }
+  .cat-title-text h2 { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 22px; margin: 0 0 6px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .cat-count { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 500; color: var(--ink-2); background: var(--surface-2); border-radius: 999px; padding: 2px 10px; border: 1px solid var(--c); }
+  .phase-meta { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--muted); margin: 0 0 6px; }
+  .phase-universe { font-size: 13.5px; color: var(--ink-2); margin: 0; max-width: 70ch; }
+  .phase-body { margin-left: 18px; padding-left: 14px; }
+
+  .segment-section { margin-top: 4px; border-top: 1px solid var(--grid); }
+  .segment-section > summary {
+    display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none;
+    padding: 12px 4px; flex-wrap: wrap;
+  }
+  .segment-section > summary::-webkit-details-marker { display: none; }
+  .segment-section .chev { margin-top: 0; font-size: 13px; }
+  .seg-label { font-weight: 600; font-size: 14px; flex: 1 1 220px; }
+  .seg-channel { font-size: 12px; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
+
+  .table-wrap { margin: 4px 0 18px; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 560px; }
+  thead th { text-align: left; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); padding: 11px 16px; border-bottom: 1px solid var(--grid); position: sticky; top: 0; background: var(--surface); }
+  tbody td { padding: 10px 16px; border-bottom: 1px solid var(--grid); color: var(--ink-2); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--ink); font-weight: 500; }
+  tbody tr:hover td { background: var(--surface-2); }
+  .not-in-db { font-size: 10.5px; font-family: "IBM Plex Mono", monospace; color: var(--s2); border: 1px solid var(--s2); border-radius: 4px; padding: 1px 5px; margin-left: 7px; white-space: nowrap; }
+  .empty-segment { padding: 16px; color: var(--muted); font-size: 13px; }
+
+  td.links { white-space: nowrap; }
+  .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .icon-btn { display: inline-flex; align-items: center; gap: 5px; font-family: "IBM Plex Mono", monospace; font-size: 11px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink-2); padding: 4px 8px; cursor: pointer; text-decoration: none; line-height: 1; white-space: nowrap; }
+  a.icon-btn:hover { border-color: var(--s1); color: var(--s1); }
+  button.icon-btn:hover { border-color: var(--c, var(--s1)); color: var(--ink); }
+  .icon-btn.is-disabled { opacity: 0.35; cursor: not-allowed; }
+  .icon-btn.copied { border-color: #0ca30c; color: #0ca30c; }
+  .icon-btn.copy-failed, .icon-btn.load-failed { border-color: var(--s2); color: var(--s2); }
+
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="backlink" href="{% url 'contactdb:home' %}">&larr; ContactDB</a>
+  <header class="masthead">
+    <p class="eyebrow">Trip planning &middot; Sept 2026</p>
+    <h1>Outreach Plan</h1>
+    <p class="dek">Every phase of the trip, broken into priority tiers computed live from the database: who's confirmed attending, who's a warm connection, and who's senior vs. manager-level — so outreach starts with the highest-confidence people first. Equipment-segment companies are kept but deprioritized in every phase.</p>
+    <div class="meta">
+      <span>{{ phases|length }} phases</span>
+      <span>Recomputed on every page load</span>
+    </div>
+  </header>
+
+  <nav class="jump">
+    {% for phase in phases %}
+      <a class="chip" href="#{{ phase.key }}" style="--c: var({{ phase.color }})"><span class="dot"></span>{{ phase.title }} <span class="chip-n">{{ phase.total_people }}</span></a>
+    {% endfor %}
+  </nav>
+
+  {% for phase in phases %}
+    <details class="cat-section" id="{{ phase.key }}" style="--c: var({{ phase.color }})" {% if forloop.first %}open{% endif %}>
+      <summary>
+        <span class="chev" aria-hidden="true">&#9656;</span>
+        <span class="rule"></span>
+        <div class="cat-title-text">
+          <h2>{{ phase.title }}<span class="cat-count">{{ phase.total_people }} people</span></h2>
+          <p class="phase-meta">{{ phase.window }}</p>
+          <p class="phase-universe">{{ phase.universe_note }}</p>
+        </div>
+      </summary>
+      <div class="phase-body">
+        {% for segment in phase.segments %}
+          <details class="segment-section" style="--c: var({{ segment.color }})">
+            <summary>
+              <span class="chev" aria-hidden="true">&#9656;</span>
+              <span class="dot"></span>
+              <span class="seg-label">{{ segment.label }}</span>
+              <span class="seg-channel">{{ segment.channel }}</span>
+              <span class="cat-count">{{ segment.count }}</span>
+            </summary>
+            {% if segment.people %}
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Name</th><th>Title</th><th>Company</th><th>Links</th></tr></thead>
+                  <tbody>
+                    {% for person in segment.people %}
+                      <tr>
+                        <td>{{ person.name }}{% if not person.in_db %}<span class="not-in-db">not in DB</span>{% endif %}</td>
+                        <td>{{ person.title|default:"—" }}</td>
+                        <td>{{ person.company_name }}</td>
+                        <td class="links">
+                          <div class="btn-row">
+                            {% if person.website %}
+                              <a class="icon-btn" href="{{ person.website }}" target="_blank" rel="noopener" aria-label="Open {{ person.company_name }}'s website">
+                                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 13 3M8.5 3H13v4.5M13 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/></svg>Website
+                              </a>
+                            {% endif %}
+                            {% if person.id %}
+                              <button type="button" class="icon-btn{% if not person.has_linkedin %} is-disabled{% endif %}" data-person-id="{{ person.id }}" data-action="linkedin" {% if not person.has_linkedin %}disabled aria-label="No LinkedIn on file"{% else %}onclick="openLinkedIn(this)" aria-label="Open {{ person.name }}'s LinkedIn profile"{% endif %}>
+                                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5 13 3M8.5 3H13v4.5M13 9v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h3"/></svg>LinkedIn
+                              </button>
+                              <button type="button" class="icon-btn{% if not person.has_email %} is-disabled{% endif %}" data-person-id="{{ person.id }}" data-action="email" {% if not person.has_email %}disabled aria-label="No email on file"{% else %}onclick="copyEmail(this)" aria-label="Copy {{ person.name }}'s email"{% endif %}>
+                                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.2"/><path d="M3.5 10.5h-.8a1.2 1.2 0 0 1-1.2-1.2v-6a1.2 1.2 0 0 1 1.2-1.2h6a1.2 1.2 0 0 1 1.2 1.2v.8"/></svg><span class="btn-txt">Copy email</span>
+                              </button>
+                            {% endif %}
+                            {% if person.company_id %}
+                              <a class="icon-btn" href="{% url 'contactdb:company_brief' person.company_id %}" aria-label="Open {{ person.company_name }}'s company brief">
+                                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h6L12.5 5v8.5a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z"/><path d="M9.5 2.5V5h3"/><path d="M5.5 8h5M5.5 10.5h5"/></svg>Brief
+                              </a>
+                            {% endif %}
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="empty-segment">Nobody in this tier{% if segment.key == "confirmed" %} — no LinkedIn-post confirmation data captured for this conference yet{% endif %}.</div>
+            {% endif %}
+          </details>
+        {% endfor %}
+      </div>
+    </details>
+  {% endfor %}
+
+  <footer>{{ phases|length }} phases &middot; recomputed live on every page load &middot; email/LinkedIn fetched on click, never embedded in this page</footer>
+</div>
+
+<script>
+  var CONTACT_CACHE = {};
+  var CONTACT_URL_BASE = "/contactdb/api/people/";
+
+  function fetchContact(id) {
+    if (CONTACT_CACHE[id]) return Promise.resolve(CONTACT_CACHE[id]);
+    return fetch(CONTACT_URL_BASE + id + "/contact/")
+      .then(function (res) { if (!res.ok) throw new Error("request failed"); return res.json(); })
+      .then(function (data) { CONTACT_CACHE[id] = data; return data; });
+  }
+
+  function openLinkedIn(btn) {
+    var id = btn.getAttribute("data-person-id");
+    fetchContact(id).then(function (data) {
+      if (data.linkedin_url) {
+        window.open(data.linkedin_url, "_blank", "noopener");
+      } else {
+        flash(btn, "load-failed", "No profile");
+      }
+    }).catch(function () { flash(btn, "load-failed", "Failed"); });
+  }
+
+  function fallbackCopy(text, cb) {
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      cb(ok);
+    } catch (e) {
+      cb(false);
+    }
+  }
+
+  function flash(btn, cls, label) {
+    var original = btn.innerHTML;
+    var originalClass = btn.className;
+    btn.classList.add(cls);
+    btn.innerHTML = '<span class="btn-txt">' + label + '</span>';
+    setTimeout(function () {
+      btn.className = originalClass;
+      btn.innerHTML = original;
+    }, 1400);
+  }
+
+  function copyEmail(btn) {
+    var id = btn.getAttribute("data-person-id");
+    fetchContact(id).then(function (data) {
+      if (!data.email) { flash(btn, "load-failed", "No email"); return; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(data.email).then(function () {
+          flash(btn, "copied", "Copied");
+        }, function () {
+          fallbackCopy(data.email, function (ok) { flash(btn, ok ? "copied" : "copy-failed", ok ? "Copied" : "Copy failed"); });
+        });
+      } else {
+        fallbackCopy(data.email, function (ok) { flash(btn, ok ? "copied" : "copy-failed", ok ? "Copied" : "Copy failed"); });
+      }
+    }).catch(function () { flash(btn, "load-failed", "Failed"); });
+  }
+
+  // Clicking a table row's link buttons shouldn't toggle the enclosing <details>.
+  document.querySelectorAll(".icon-btn").forEach(function (btn) {
+    btn.addEventListener("click", function (e) { e.stopPropagation(); });
+  });
+</script>
+</body>
+</html>

@@ -11,6 +11,7 @@ from django.views.decorators.http import require_POST
 from companymap.models import Company
 
 from .models import CompanyBrief, CompanyList, CompanyListItem, Person, PersonList, PersonListItem
+from .outreach_plan import build_outreach_plan
 
 CONNECTOR_SLUGS = {
     "vedant": "Vedant",
@@ -388,3 +389,8 @@ def company_brief(request, company_id):
             "brief": brief,
         },
     )
+
+
+def outreach_plan(request):
+    phases = build_outreach_plan()
+    return render(request, "contactdb/outreach_plan.html", {"phases": phases})
