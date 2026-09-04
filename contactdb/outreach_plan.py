@@ -37,6 +37,15 @@ TIER_LABELS = {
     "other": "Other / unlabeled title",
     "equipment": "Equipment companies (deprioritized)",
 }
+TIER_COLORS = {
+    "confirmed": "--s3",
+    "warm": "--s1",
+    "senior": "--s5",
+    "manager": "--s4",
+    "other": "--s7",
+    "equipment": "--s2",
+}
+PHASE_COLORS = ["--s1", "--s2", "--s3", "--s4", "--s5"]
 
 
 def _company_website(company):
@@ -57,8 +66,8 @@ def _person_dict(person, company, note_title=None, in_db=True):
         "company_name": company.name if company else (person.company_name or ""),
         "company_id": company.id if company else None,
         "website": _company_website(company),
-        "linkedin_url": getattr(person, "linkedin_url", "") or "",
-        "email": getattr(person, "email", "") or "",
+        "has_linkedin": bool(in_db and getattr(person, "linkedin_url", "")),
+        "has_email": bool(in_db and getattr(person, "email", "")),
         "in_db": in_db,
     }
 
@@ -108,7 +117,7 @@ def _confirmed_attendees_from_notes(conference, company_lookup):
                     "company_name": company.name if company else cc.name,
                     "company_id": company.id if company else None,
                     "website": _company_website(company),
-                    "linkedin_url": "", "email": "", "in_db": False,
+                    "has_linkedin": False, "has_email": False, "in_db": False,
                 })
     return confirmed
 
@@ -201,6 +210,7 @@ def _segment(tier_key, people):
         "key": tier_key,
         "label": TIER_LABELS[tier_key],
         "channel": CHANNEL_BY_TIER[tier_key],
+        "color": TIER_COLORS[tier_key],
         "people": sorted(people, key=lambda d: d["company_name"]),
         "count": len(people),
     }
@@ -248,4 +258,7 @@ def build_outreach_plan():
         include_confirmed=True,
     )
 
-    return [phase1, phase2, phase3a, phase3b, phase4]
+    phases = [phase1, phase2, phase3a, phase3b, phase4]
+    for phase, color in zip(phases, PHASE_COLORS):
+        phase["color"] = color
+    return phases
