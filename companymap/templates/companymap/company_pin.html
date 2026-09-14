@@ -30,9 +30,10 @@
     const placeLabel = "{{ company.city|escapejs }}{% if company.city and company.state_code %}, {% endif %}{{ company.state_code|escapejs }}";
 
     const map = L.map("pin-map", { zoomControl: true }).setView([lat, lng], 16);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
       maxZoom: 18,
-      attribution: "&copy; OpenStreetMap contributors"
+      subdomains: "abcd",
+      attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
     }).addTo(map);
 
     const popupEl = document.createElement("div");
